@@ -5,9 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ekal Handloom Management System</title>
 
-<!-- Firebase SDKs -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<!-- Firebase SDK Libraries (App, Auth, Realtime Database) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <style>
 *{box-sizing:border-box}
@@ -59,7 +60,7 @@ tr:hover{background:#fafcfb}
 .login{position:fixed;inset:0;background:#174c3d;display:flex;align-items:center;justify-content:center;z-index:300}
 .loginbox{background:#fff;padding:32px;border-radius:14px;width:400px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.35)}
 .loginbox input{width:100%;padding:11px;margin:8px 0;border:1px solid #ccd6d1;border-radius:7px;outline:none}
-.toast{position:fixed;right:24px;bottom:24px;background:#174c3d;color:#fff;padding:12px 20px;border-radius:8px;display:none;z-index:400;font-size:13px;font-weight:600}
+.toast{position:fixed;right:24px;bottom:24px;background:#174c3d;color:#fff;padding:12px 20px;border-radius:8px;display:none;z-index:400;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,0.15)}
 .small{font-size:11px}
 .actions{white-space:nowrap;display:flex;gap:6px}
 .filter-bar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;background:#f9fbfb;padding:10px;border-radius:8px;border:1px solid #e1e8e5}
@@ -218,35 +219,30 @@ tr:hover{background:#fafcfb}
 <script>
 "use strict";
 
-// Firebase Configuration - Replace with your Firebase Console details
+// 1. Firebase Configuration (Apne Firebase Console Project credentials paste karein)
 const firebaseConfig = {
-  apiKey: "AIzaSyCPBMJOBERKUArjBbwf0-_FNWs5jX-8uiU",
-  authDomain: "egf-handloom-project.firebaseapp.com",
-  databaseURL: "https://egf-handloom-project-default-rtdb.firebaseio.com",
-  projectId: "egf-handloom-project",
-  storageBucket: "egf-handloom-project.firebasestorage.app",
-  messagingSenderId: "189439289869",
-  appId: "1:189439289869:web:50806c691ccce96f344344"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
 
-// Initialize Firebase
+// 2. Firebase Initialize
 firebase.initializeApp(firebaseConfig);
-  // Auth State Observer - Wait until authentication is complete
-let isAuthenticated = false;
-
-firebase.auth().onAuthStateChanged((user) => {
-  if (user) {
-    isAuthenticated = true;
-    console.log("Firebase Authenticated as Anonymous User:", user.uid);
-  } else {
-    firebase.auth().signInAnonymously().catch((err) => {
-      console.error("Anonymous Auth Error:", err);
-    });
-  }
-  
 const database = firebase.database();
 const dbRef = database.ref("ekal_handloom_data");
 
+// 3. Background Anonymous Authentication
+firebase.auth().signInAnonymously().then(() => {
+  console.log("Firebase Auth Connected Successfully.");
+}).catch((error) => {
+  console.error("Auth Error:", error);
+});
+
+const KEY = "ekal_handloom_persistent_v13";
 const SESSION = "ekal_handloom_session_v13";
 
 const demo = {
@@ -305,51 +301,47 @@ const demo = {
  ]
 };
 
-let db = JSON.parse(JSON.stringify(demo));
+let db = loadDB();
 let current = "dashboard";
 
-// Listen to Realtime Data updates from Firebase Cloud
+// Realtime Observer: Live synchronization for changes
 dbRef.on("value", (snapshot) => {
   const cloudData = snapshot.val();
   if (cloudData) {
     db = cloudData;
-    if (!db.customRoles) db.customRoles = ["OFFICE_ADMIN"];
-    if (!db.attendance) db.attendance = [];
-    if (!db.production) db.production = [];
-    if (!db.yarn) db.yarn = [];
-    if (!db.payments) db.payments = [];
-    if (!db.workers) db.workers = [];
-    if (!db.training) db.training = [];
-    if (!db.tasks) db.tasks = [];
+    localStorage.setItem(KEY, JSON.stringify(db));
     populateQuickLoginDropdown();
     render(current);
-  } else {
-    // If database is empty, seed demo data to Firebase Cloud
-    saveDB("Initialized Cloud Database");
   }
 });
 
-function saveDB(msg = "✓ Saved successfully!") {
-  // Local storage me pehle save karein
-  localStorage.setItem(KEY, JSON.stringify(db));
-  populateQuickLoginDropdown();
-
-  if (!firebase.auth().currentUser) {
-    firebase.auth().signInAnonymously().then(() => {
-      dbRef.set(db).then(() => showToast(msg)).catch(err => alert("Sync Error: " + err.message));
-    });
-    return;
+function loadDB() {
+ try {
+  const raw = localStorage.getItem(KEY);
+  if (raw) {
+    const data = JSON.parse(raw);
+    if (!data.customRoles) data.customRoles = ["OFFICE_ADMIN"];
+    return data;
   }
-
-  // Firebase Realtime Cloud Push
-  dbRef.set(db).then(() => {
-    showToast(msg);
-  }).catch((err) => {
-    console.error("Firebase Sync Error:", err);
-    alert("⚠️ Cloud Sync Error: " + err.message);
-  });
+ } catch(e){}
+ localStorage.setItem(KEY, JSON.stringify(demo));
+ return JSON.parse(JSON.stringify(demo));
 }
-  
+
+// Updated Save Function with Notification Toast & Popup Alert Confirmation
+function saveDB(msg = "✓ Saved successfully!") {
+ localStorage.setItem(KEY, JSON.stringify(db));
+ populateQuickLoginDropdown();
+ 
+ dbRef.set(db).then(() => {
+   showToast(msg);
+ }).catch((err) => {
+   console.error("Firebase Sync Error:", err);
+   alert("⚠️ Cloud Sync Failed: " + err.message);
+   showToast("⚠️ Cloud Sync Error");
+ });
+}
+
 function nextId(prefix) {
  return prefix + "_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,6);
 }
@@ -371,10 +363,21 @@ function populateQuickLoginDropdown() {
  const selectEl = document.getElementById("quickLogin");
  if (!selectEl) return;
  let html = `<option value="">-- Choose User Profile --</option>`;
- (db.users || []).forEach(u => {
+ db.users.forEach(u => {
    html += `<option value="${esc(u.email)}">${esc(u.name)} (${esc(u.role)}) - ${esc(u.email)}</option>`;
  });
  selectEl.innerHTML = html;
+}
+
+function applyQuickLogin() {
+ const em = document.getElementById("quickLogin").value;
+ if(em) {
+   document.getElementById("loginEmail").value = em;
+   const matchedUser = db.users.find(u => u.email.toLowerCase() === em.toLowerCase());
+   if (matchedUser && matchedUser.pass) {
+     document.getElementById("loginPass").value = matchedUser.pass;
+   }
+ }
 }
 
 function canEditModule(mod, targetCentre = null) {
@@ -417,7 +420,7 @@ function showToast(msg) {
  t.textContent = msg;
  t.style.display = "block";
  clearTimeout(window._toast);
- window._toast = setTimeout(() => t.style.display = "none", 2000);
+ window._toast = setTimeout(() => t.style.display = "none", 2500);
 }
 
 function modal(title, html) {
@@ -436,14 +439,6 @@ document.getElementById("logoutBtn").onclick = () => {
  location.reload();
 };
 
-function applyQuickLogin() {
- const em = document.getElementById("quickLogin").value;
- if(em) {
-   document.getElementById("loginEmail").value = em;
-   document.getElementById("loginPass").value = ""; 
- }
-}
-
 function login() {
  const em = document.getElementById("loginEmail").value.trim().toLowerCase();
  const pw = document.getElementById("loginPass").value;
@@ -457,7 +452,7 @@ function login() {
    return;
  }
 
- const u = (db.users || []).find(x => x.email.toLowerCase() === em && (x.pass ? x.pass === pw : true));
+ const u = db.users.find(x => x.email.toLowerCase() === em && (x.pass ? x.pass === pw : true));
  if (!u) {
    alert("Galat Email ID ya Password!");
    return;
@@ -520,8 +515,8 @@ function getLockNotice(mod) {
 
 function delRecord(mod, id) {
  if(!confirm("Kya aap is record ko delete karna chahte hain?")) return;
- db[mod] = (db[mod] || []).filter(x => x.id !== id);
- saveDB("✓ Record deleted successfully");
+ db[mod] = db[mod].filter(x => x.id !== id);
+ saveDB("✓ Record deleted successfully!");
  render(current);
 }
 
@@ -541,12 +536,12 @@ function downloadCSV(csvContent, fileName) {
 function dashboard() {
  const selectedCentre = val("dashCentreFilter") || "All";
  
- const filteredProd = selectedCentre === "All" ? db.production : (db.production || []).filter(x => x.centre === selectedCentre);
- const filteredYarn = selectedCentre === "All" ? db.yarn : (db.yarn || []).filter(x => x.centre === selectedCentre);
- const filteredWorkers = selectedCentre === "All" ? db.workers : (db.workers || []).filter(x => x.centre === selectedCentre);
- const filteredPay = selectedCentre === "All" ? db.payments : (db.payments || []).filter(x => x.centre === selectedCentre);
- const filteredCentres = selectedCentre === "All" ? db.centres : (db.centres || []).filter(x => x.name === selectedCentre);
- const filteredTasks = selectedCentre === "All" ? db.tasks : (db.tasks || []).filter(x => x.centre === "All Centres" || x.centre === selectedCentre);
+ const filteredProd = selectedCentre === "All" ? db.production : db.production.filter(x => x.centre === selectedCentre);
+ const filteredYarn = selectedCentre === "All" ? db.yarn : db.yarn.filter(x => x.centre === selectedCentre);
+ const filteredWorkers = selectedCentre === "All" ? db.workers : db.workers.filter(x => x.centre === selectedCentre);
+ const filteredPay = selectedCentre === "All" ? db.payments : db.payments.filter(x => x.centre === selectedCentre);
+ const filteredCentres = selectedCentre === "All" ? db.centres : db.centres.filter(x => x.name === selectedCentre);
+ const filteredTasks = selectedCentre === "All" ? db.tasks : db.tasks.filter(x => x.centre === "All Centres" || x.centre === selectedCentre);
 
  const pcs = filteredProd.filter(x => x.unit === "Pieces").reduce((s, x) => s + Number(x.qty || 0), 0);
  const meters = filteredProd.filter(x => x.unit === "Meter").reduce((s, x) => s + Number(x.qty || 0), 0);
@@ -566,7 +561,7 @@ function dashboard() {
      <div>
        <select id="dashCentreFilter" onchange="dashboard()" style="padding:8px 12px;border:1px solid #ccd6d1;border-radius:6px;font-size:13px;font-weight:600;background:#fff;color:#174c3d">
          <option value="All" ${selectedCentre === "All" ? "selected" : ""}>🏢 All Centres Combined</option>
-         ${(db.centres || []).map(c => `<option value="${esc(c.name)}" ${c.name === selectedCentre ? "selected" : ""}>📍 ${esc(c.name)}</option>`).join("")}
+         ${db.centres.map(c => `<option value="${esc(c.name)}" ${c.name === selectedCentre ? "selected" : ""}>📍 ${esc(c.name)}</option>`).join("")}
        </select>
      </div>
      <button class="btn primary" onclick="go('production')">
@@ -579,7 +574,7 @@ function dashboard() {
    <div class="card">
      <div>
        <div class="muted" style="text-transform:uppercase;font-size:11px;font-weight:700;letter-spacing:0.5px">Active Centres</div>
-       <div class="num">${(db.centres || []).filter(x => x.status === "Active").length} <span style="font-size:14px;color:#68746f;font-weight:normal">/ ${(db.centres || []).length} Total</span></div>
+       <div class="num">${db.centres.filter(x => x.status === "Active").length} <span style="font-size:14px;color:#68746f;font-weight:normal">/ ${db.centres.length} Total</span></div>
      </div>
      <div style="margin-top:8px;font-size:11px;color:#16714b;font-weight:600">✓ Fully Operational</div>
    </div>
@@ -628,7 +623,7 @@ function dashboard() {
          </thead>
          <tbody>
          ${filteredCentres.map(c => {
-           const cWorkers = (db.workers || []).filter(w => w.centre === c.name).length;
+           const cWorkers = db.workers.filter(w => w.centre === c.name).length;
            return `<tr>
              <td><b>${esc(c.name)}</b></td>
              <td>${esc(c.state)} - ${esc(c.incharge)}</td>
@@ -853,8 +848,8 @@ function attendance() {
  let selectedDate = val("attDate") || new Date().toISOString().slice(0,10);
 
  const displayWorkers = selectedCentre === "All" 
-   ? (db.workers || [])
-   : (db.workers || []).filter(w => w.centre === selectedCentre);
+   ? db.workers 
+   : db.workers.filter(w => w.centre === selectedCentre);
 
  document.getElementById("main").innerHTML = `
  ${getLockNotice("attendance")}
@@ -868,7 +863,7 @@ function attendance() {
      <label class="small"><b>Centre Dropdown:</b></label><br>
      <select id="attCentre" onchange="attendance()" ${u.centre !== "All Centres" ? "disabled" : ""}>
        <option value="All" ${selectedCentre === "All" ? "selected" : ""}>All Centres (Combined View)</option>
-       ${(db.centres || []).map(c => `<option value="${esc(c.name)}" ${c.name === selectedCentre ? "selected" : ""}>${esc(c.name)}</option>`).join("")}
+       ${db.centres.map(c => `<option value="${esc(c.name)}" ${c.name === selectedCentre ? "selected" : ""}>${esc(c.name)}</option>`).join("")}
      </select>
    </div>
    <div>
@@ -883,7 +878,7 @@ function attendance() {
      <table>
        <tr><th>Worker Name</th><th>Centre</th><th>Role</th><th>Phone</th><th>Attendance Status</th></tr>
        ${displayWorkers.map(w => {
-         const existing = (db.attendance || []).find(a => a.date === selectedDate && a.workerId === w.id);
+         const existing = db.attendance.find(a => a.date === selectedDate && a.workerId === w.id);
          const status = existing ? existing.status : "Present";
          const canEditThis = canEdit && (u.centre === "All Centres" || u.centre === w.centre);
          return `
@@ -920,7 +915,7 @@ function attendance() {
      <table>
        <tr><th>Worker Name</th><th>Centre</th><th>Present Days</th><th>Half Days</th><th>Absent Days</th><th>Effective Attendance</th></tr>
        ${displayWorkers.map(w => {
-         const logs = (db.attendance || []).filter(a => a.workerId === w.id);
+         const logs = db.attendance.filter(a => a.workerId === w.id);
          const pDays = logs.filter(a => a.status === "Present").length;
          const hDays = logs.filter(a => a.status === "Half Day").length;
          const aDays = logs.filter(a => a.status === "Absent").length;
@@ -944,11 +939,11 @@ function attendance() {
 }
 
 function exportAttendanceExcel(selectedCentre) {
- const displayWorkers = selectedCentre === "All" ? (db.workers || []) : (db.workers || []).filter(w => w.centre === selectedCentre);
+ const displayWorkers = selectedCentre === "All" ? db.workers : db.workers.filter(w => w.centre === selectedCentre);
  let csv = "Worker Name,Centre,Date,Attendance Status\n";
  
  displayWorkers.forEach(w => {
-   const logs = (db.attendance || []).filter(a => a.workerId === w.id);
+   const logs = db.attendance.filter(a => a.workerId === w.id);
    if(logs.length === 0) {
      csv += `"${w.name}","${w.centre}","N/A","No Record"\n`;
    } else {
@@ -964,10 +959,8 @@ function exportAttendanceExcel(selectedCentre) {
 function saveAttendance(selectedCentre, date) {
  const u = getCurrentUser();
  const displayWorkers = selectedCentre === "All" 
-   ? (db.workers || []) 
-   : (db.workers || []).filter(w => w.centre === selectedCentre);
-
- if (!db.attendance) db.attendance = [];
+   ? db.workers 
+   : db.workers.filter(w => w.centre === selectedCentre);
 
  displayWorkers.forEach(w => {
    if (u.centre !== "All Centres" && u.centre !== w.centre) return;
@@ -979,7 +972,7 @@ function saveAttendance(selectedCentre, date) {
      db.attendance.push({ id: nextId("att"), date, centre: w.centre, workerId: w.id, workerName: w.name, status: statusVal });
    }
  });
- saveDB("✓ Attendance saved successfully");
+ saveDB("✓ Attendance saved successfully!");
  attendance();
 }
 
@@ -988,7 +981,7 @@ function centres() {
  const canEdit = canEditModule("centres");
  const selectedCentre = val("centreFilter") || "All";
 
- const filteredCentres = selectedCentre === "All" ? (db.centres || []) : (db.centres || []).filter(c => c.name === selectedCentre);
+ const filteredCentres = selectedCentre === "All" ? db.centres : db.centres.filter(c => c.name === selectedCentre);
 
  document.getElementById("main").innerHTML = `
  ${getLockNotice("centres")}
@@ -998,7 +991,7 @@ function centres() {
      <div>
        <select id="centreFilter" onchange="centres()" style="padding:8px 12px;border:1px solid #ccd6d1;border-radius:6px;font-size:12px;background:#fff">
          <option value="All" ${selectedCentre === "All" ? "selected" : ""}>Filter Centre: All Centres</option>
-         ${(db.centres || []).map(c => `<option value="${esc(c.name)}" ${c.name === selectedCentre ? "selected" : ""}>${esc(c.name)}</option>`).join("")}
+         ${db.centres.map(c => `<option value="${esc(c.name)}" ${c.name === selectedCentre ? "selected" : ""}>${esc(c.name)}</option>`).join("")}
        </select>
      </div>
      ${canEdit ? `<button class="btn primary" onclick="centreModal()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Centre</button>` : ""}
@@ -1009,7 +1002,7 @@ function centres() {
      <table>
        <tr><th>Centre Name</th><th>State In-Charge</th><th>Opening Date</th><th>Looms</th><th>Women Count</th><th>Status</th><th>Actions</th></tr>
        ${filteredCentres.map(c => {
-         const wCount = (db.workers || []).filter(w => w.centre === c.name).length;
+         const wCount = db.workers.filter(w => w.centre === c.name).length;
          return `
            <tr>
              <td><b>${esc(c.name)}</b></td>
@@ -1056,13 +1049,12 @@ function centreModal(item = null) {
      status: val("fStatus") 
    };
    if(!data.name) return alert("Centre Name is required.");
-   if (!db.centres) db.centres = [];
    if (item) Object.assign(item, data);
    else db.centres.push({ id: nextId("c"), ...data });
-   saveDB(); closeM(); centres();
+   saveDB("✓ Centre details saved successfully!"); closeM(); centres();
  };
 }
-function editCentreModal(id) { centreModal((db.centres || []).find(c => c.id === id)); }
+function editCentreModal(id) { centreModal(db.centres.find(c => c.id === id)); }
 
 // 5. PRODUCTION
 function production() {
@@ -1077,7 +1069,7 @@ function production() {
    <div class="table-responsive">
      <table>
        <tr><th>Date</th><th>Centre</th><th>Product</th><th>Qty</th><th>Unit</th><th>Worker / Group</th><th>Status</th><th>Est Time</th><th>Actions</th></tr>
-       ${(db.production || []).map(p => `
+       ${db.production.map(p => `
          <tr>
            <td>${esc(p.date)}</td>
            <td><b>${esc(p.centre)}</b></td>
@@ -1099,14 +1091,14 @@ function prodModal(item = null) {
  if (!canEditModule("production")) return;
  const x = item || { date: new Date().toISOString().slice(0,10), centre: db.centres[0]?.name || "", product: "", qty: 1, unit: "Pieces", worker: "", hours: 8, status: "Completed", estTime: "0 Hours" };
  
- const currentCentreWorkers = (db.workers || []).filter(w => !x.centre || w.centre === x.centre);
+ const currentCentreWorkers = db.workers.filter(w => !x.centre || w.centre === x.centre);
 
  modal(item ? "Edit Production Record" : "Record Production", `
    <div class="form">
      <div class="field"><label>Date</label><input id="fProdDate" type="date" value="${esc(x.date)}"></div>
      <div class="field"><label>Centre Name *</label>
        <select id="fProdCentre" onchange="updateProdWorkerDropdown()">
-         ${(db.centres || []).map(c => `<option value="${esc(c.name)}" ${x.centre===c.name?"selected":""}>${esc(c.name)}</option>`).join("")}
+         ${db.centres.map(c => `<option value="${esc(c.name)}" ${x.centre===c.name?"selected":""}>${esc(c.name)}</option>`).join("")}
        </select>
      </div>
      <div class="field"><label>Product Name *</label><input id="fProduct" value="${esc(x.product)}"></div>
@@ -1159,10 +1151,9 @@ function prodModal(item = null) {
      estTime: val("fEstTime")
    };
    if(!data.product) return alert("Product name is required.");
-   if (!db.production) db.production = [];
    if (item) Object.assign(item, data);
    else db.production.push({ id: nextId("p"), ...data });
-   saveDB(); closeM(); production();
+   saveDB("✓ Production record saved successfully!"); closeM(); production();
  };
 }
 
@@ -1171,13 +1162,13 @@ function updateProdWorkerDropdown() {
  const selectEl = document.getElementById("fWorkerSelect");
  if(!selectEl) return;
 
- const filtered = (db.workers || []).filter(w => w.centre === cName);
+ const filtered = db.workers.filter(w => w.centre === cName);
  selectEl.innerHTML = `<option value="">-- Select Artisan / Trainee --</option>` +
    filtered.map(w => `<option value="${esc(w.name)}">${esc(w.name)} (${esc(w.role)})</option>`).join("") +
    `<option value="__ADD_NEW__">+ Add New Worker / Trainee</option>`;
 }
 
-function editProdModal(id) { prodModal((db.production || []).find(p => p.id === id)); }
+function editProdModal(id) { prodModal(db.production.find(p => p.id === id)); }
 
 // 6. WORKERS
 function workers() {
@@ -1192,7 +1183,7 @@ function workers() {
    <div class="table-responsive">
      <table>
        <tr><th>Name</th><th>Centre</th><th>Role</th><th>Phone</th><th>Actions</th></tr>
-       ${(db.workers || []).map(w => `
+       ${db.workers.map(w => `
          <tr>
            <td><b>${esc(w.name)}</b></td>
            <td>${esc(w.centre)}</td>
@@ -1214,7 +1205,7 @@ function workerModal(item = null, defaultCentre = null) {
      <div class="field"><label>Full Name *</label><input id="fName" value="${esc(x.name)}"></div>
      <div class="field"><label>Centre *</label>
        <select id="fCentre">
-         ${(db.centres || []).map(c => `<option value="${esc(c.name)}" ${x.centre===c.name?"selected":""}>${esc(c.name)}</option>`).join("")}
+         ${db.centres.map(c => `<option value="${esc(c.name)}" ${x.centre===c.name?"selected":""}>${esc(c.name)}</option>`).join("")}
        </select>
      </div>
      <div class="field"><label>Role / Skill</label>
@@ -1233,16 +1224,15 @@ function workerModal(item = null, defaultCentre = null) {
  document.getElementById("saveWorkerBtn").onclick = () => {
    const data = { name: val("fName"), centre: val("fCentre"), role: val("fRole"), phone: val("fPhone"), status: "Active" };
    if (!data.name) return alert("Worker Name is required.");
-   if (!db.workers) db.workers = [];
    if (item) Object.assign(item, data);
    else db.workers.push({ id: nextId("w"), ...data });
-   saveDB("✓ Worker saved"); closeM();
+   saveDB("✓ Worker profile saved successfully!"); closeM();
    if (current === "attendance") attendance(); 
    else if (current === "production") prodModal();
    else workers();
  };
 }
-function editWorkerModal(id) { workerModal((db.workers || []).find(w => w.id === id)); }
+function editWorkerModal(id) { workerModal(db.workers.find(w => w.id === id)); }
 
 // 7. YARN & STOCK
 function yarn() {
@@ -1257,7 +1247,7 @@ function yarn() {
    <div class="table-responsive">
      <table>
        <tr><th>Centre Name</th><th>Item Specification</th><th>Allocated Qty</th><th>Allocated Date</th><th>Received Qty</th><th>Received Date</th><th>Pending Qty</th><th>Unit</th><th>Actions</th></tr>
-       ${(db.yarn || []).map(y => `
+       ${db.yarn.map(y => `
          <tr>
            <td><b>${esc(y.centre)}</b></td>
            <td>${esc(y.item)}</td>
@@ -1283,7 +1273,7 @@ function yarnModal(item = null) {
    <div class="form">
      <div class="field"><label>Centre Name *</label>
        <select id="fYarnCentre">
-         ${(db.centres || []).map(c => `<option value="${esc(c.name)}" ${x.centre===c.name?"selected":""}>${esc(c.name)}</option>`).join("")}
+         ${db.centres.map(c => `<option value="${esc(c.name)}" ${x.centre===c.name?"selected":""}>${esc(c.name)}</option>`).join("")}
        </select>
      </div>
      <div class="field"><label>Yarn Item Specs *</label><input id="fItem" value="${esc(x.item)}"></div>
@@ -1319,13 +1309,12 @@ function yarnModal(item = null) {
      status: pend <= 0 ? "Completed" : "Pending" 
    };
    if (!data.item) return alert("Yarn item name required.");
-   if (!db.yarn) db.yarn = [];
    if (item) Object.assign(item, data);
    else db.yarn.push({ id: nextId("y"), ...data });
-   saveDB("✓ Yarn saved"); closeM(); yarn();
+   saveDB("✓ Yarn inventory details saved!"); closeM(); yarn();
  };
 }
-function editYarnModal(id) { yarnModal((db.yarn || []).find(y => y.id === id)); }
+function editYarnModal(id) { yarnModal(db.yarn.find(y => y.id === id)); }
 
 // 8. PAYMENTS & WAGES
 function payments() {
@@ -1340,7 +1329,7 @@ function payments() {
    <div class="table-responsive">
      <table>
        <tr><th>Date</th><th>Centre</th><th>Worker Name</th><th>Work Details</th><th>Qty</th><th>Rate (₹)</th><th>Total Amount (₹)</th><th>Status</th><th>Actions</th></tr>
-       ${(db.payments || []).map(p => `
+       ${db.payments.map(p => `
          <tr>
            <td>${esc(p.date)}</td>
            <td><b>${esc(p.centre || '-')}</b></td>
@@ -1376,7 +1365,7 @@ function paymentModal(item = null) {
      <div class="field"><label>Date *</label><input id="fPayDate" type="date" value="${esc(x.date)}"></div>
      <div class="field"><label>Centre Name (Dropdown) *</label>
        <select id="fPayCentre">
-         ${(db.centres || []).map(c => `<option value="${esc(c.name)}" ${x.centre===c.name?"selected":""}>${esc(c.name)}</option>`).join("")}
+         ${db.centres.map(c => `<option value="${esc(c.name)}" ${x.centre===c.name?"selected":""}>${esc(c.name)}</option>`).join("")}
        </select>
      </div>
      <div class="field"><label>Worker Name *</label><input id="fPayWorker" value="${esc(x.worker)}"></div>
@@ -1406,10 +1395,9 @@ function paymentModal(item = null) {
      status: val("fPayStatus") 
    };
    if (!data.worker || !data.amount) return alert("Worker name and Amount are required.");
-   if (!db.payments) db.payments = [];
    if (item) Object.assign(item, data);
    else db.payments.push({ id: nextId("pay"), ...data });
-   saveDB("✓ Payment saved successfully"); closeM(); payments();
+   saveDB("✓ Payment record saved successfully!"); closeM(); payments();
  };
 }
 
@@ -1420,7 +1408,7 @@ function calcTotalAmount() {
  if (totEl) totEl.value = (q * r).toFixed(2);
 }
 
-function editPaymentModal(id) { paymentModal((db.payments || []).find(p => p.id === id)); }
+function editPaymentModal(id) { paymentModal(db.payments.find(p => p.id === id)); }
 
 // 9. TRAINING
 function training() {
@@ -1435,7 +1423,7 @@ function training() {
    <div class="table-responsive">
      <table>
        <tr><th>Date</th><th>Centre</th><th>Trainer Expert</th><th>Topic</th><th>Participants</th><th>Hours Spent</th><th>Actions</th></tr>
-       ${(db.training || []).map(t => `
+       ${db.training.map(t => `
          <tr>
            <td>${esc(t.date)}</td>
            <td><b>${esc(t.centre)}</b></td>
@@ -1459,7 +1447,7 @@ function trainingModal(item = null) {
      <div class="field"><label>Date *</label><input id="fTrDate" type="date" value="${esc(x.date)}"></div>
      <div class="field"><label>Centre Name *</label>
        <select id="fTrCentre">
-         ${(db.centres || []).map(c => `<option value="${esc(c.name)}" ${x.centre===c.name?"selected":""}>${esc(c.name)}</option>`).join("")}
+         ${db.centres.map(c => `<option value="${esc(c.name)}" ${x.centre===c.name?"selected":""}>${esc(c.name)}</option>`).join("")}
        </select>
      </div>
      <div class="field"><label>Trainer Expert Name *</label><input id="fTrTrainer" value="${esc(x.trainer)}"></div>
@@ -1480,13 +1468,12 @@ function trainingModal(item = null) {
      hours: Number(val("fTrHours")||0) 
    };
    if (!data.topic || !data.trainer) return alert("Topic and Trainer details are required.");
-   if (!db.training) db.training = [];
    if (item) Object.assign(item, data);
    else db.training.push({ id: nextId("tr"), ...data });
-   saveDB("✓ Training log saved"); closeM(); training();
+   saveDB("✓ Training session saved!"); closeM(); training();
  };
 }
-function editTrainingModal(id) { trainingModal((db.training || []).find(t => t.id === id)); }
+function editTrainingModal(id) { trainingModal(db.training.find(t => t.id === id)); }
 
 // 10. TASKS & FOLLOWUPS
 function tasks() {
@@ -1501,7 +1488,7 @@ function tasks() {
    <div class="table-responsive">
      <table>
        <tr><th>Task Description</th><th>Centre Mapping</th><th>Due Date</th><th>Priority</th><th>Assigned To</th><th>Status</th><th>Actions</th></tr>
-       ${(db.tasks || []).map(t => `
+       ${db.tasks.map(t => `
          <tr>
            <td><b>${esc(t.task)}</b></td>
            <td><span class="tag">${esc(t.centre)}</span></td>
@@ -1526,7 +1513,7 @@ function taskModal(item = null) {
      <div class="field"><label>Centre Assignment</label>
        <select id="fTaskCentre">
          <option value="All Centres" ${x.centre==="All Centres"?"selected":""}>All Centres</option>
-         ${(db.centres || []).map(c => `<option value="${esc(c.name)}" ${x.centre===c.name?"selected":""}>${esc(c.name)}</option>`).join("")}
+         ${db.centres.map(c => `<option value="${esc(c.name)}" ${x.centre===c.name?"selected":""}>${esc(c.name)}</option>`).join("")}
        </select>
      </div>
      <div class="field"><label>Due Date</label><input id="fTaskDue" type="date" value="${esc(x.due)}"></div>
@@ -1559,13 +1546,12 @@ function taskModal(item = null) {
      owner: val("fTaskOwner") 
    };
    if (!data.task) return alert("Task description required.");
-   if (!db.tasks) db.tasks = [];
    if (item) Object.assign(item, data);
    else db.tasks.push({ id: nextId("t"), ...data });
-   saveDB("✓ Task saved"); closeM(); tasks();
+   saveDB("✓ Task details saved successfully!"); closeM(); tasks();
  };
 }
-function editTaskModal(id) { taskModal((db.tasks || []).find(t => t.id === id)); }
+function editTaskModal(id) { taskModal(db.tasks.find(t => t.id === id)); }
 
 // 11. REPORTS
 function reports() {
@@ -1596,7 +1582,7 @@ function reports() {
    <div class="table-responsive">
      <table>
        <tr><th>Date</th><th>Centre</th><th>Product</th><th>Qty</th><th>Unit</th><th>Worker / Group</th><th>Status</th></tr>
-       ${(db.production || []).map(p => `
+       ${db.production.map(p => `
          <tr>
            <td>${esc(p.date)}</td>
            <td><b>${esc(p.centre)}</b></td>
@@ -1622,7 +1608,7 @@ function reports() {
    <div class="table-responsive">
      <table>
        <tr><th>Centre</th><th>Item Specs</th><th>Allocated</th><th>Allocated Date</th><th>Received</th><th>Received Date</th><th>Pending</th><th>Unit</th></tr>
-       ${(db.yarn || []).map(y => `
+       ${db.yarn.map(y => `
          <tr>
            <td><b>${esc(y.centre)}</b></td>
            <td>${esc(y.item)}</td>
@@ -1649,7 +1635,7 @@ function reports() {
    <div class="table-responsive">
      <table>
        <tr><th>Date</th><th>Centre</th><th>Worker Name</th><th>Work Specification</th><th>Qty</th><th>Rate (₹)</th><th>Total Amount (₹)</th><th>Status</th></tr>
-       ${(db.payments || []).map(p => `
+       ${db.payments.map(p => `
          <tr>
            <td>${esc(p.date)}</td>
            <td><b>${esc(p.centre || '-')}</b></td>
@@ -1676,7 +1662,7 @@ function reports() {
    <div class="table-responsive">
      <table>
        <tr><th>Date</th><th>Centre</th><th>Trainer Expert</th><th>Topic</th><th>Participants</th><th>Hours Spent</th></tr>
-       ${(db.training || []).map(t => `
+       ${db.training.map(t => `
          <tr>
            <td>${esc(t.date)}</td>
            <td><b>${esc(t.centre)}</b></td>
@@ -1701,7 +1687,7 @@ function reports() {
    <div class="table-responsive">
      <table>
        <tr><th>Task Description</th><th>Centre Mapping</th><th>Due Date</th><th>Priority</th><th>Owner</th><th>Status</th></tr>
-       ${(db.tasks || []).map(t => `
+       ${db.tasks.map(t => `
          <tr>
            <td><b>${esc(t.task)}</b></td>
            <td>${esc(t.centre)}</td>
@@ -1719,7 +1705,7 @@ function reports() {
 
 function exportProdCSV() {
  let csv = "Date,Centre,Product,Quantity,Unit,Worker/Group,Status\n";
- (db.production || []).forEach(p => {
+ db.production.forEach(p => {
    csv += `"${p.date}","${p.centre}","${p.product}","${p.qty}","${p.unit}","${p.worker||''}","${p.status||'Completed'}"\n`;
  });
  downloadCSV(csv, `Production_Report_${new Date().toISOString().slice(0,10)}.csv`);
@@ -1727,7 +1713,7 @@ function exportProdCSV() {
 
 function exportYarnCSV() {
  let csv = "Centre,Item Specification,Allocated Qty,Allocation Date,Received Qty,Received Date,Pending Qty,Unit\n";
- (db.yarn || []).forEach(y => {
+ db.yarn.forEach(y => {
    csv += `"${y.centre}","${y.item}","${y.allocated}","${y.allocDate||''}","${y.received||0}","${y.recDate||''}","${y.pending}","${y.unit||'kg'}"\n`;
  });
  downloadCSV(csv, `Yarn_Stock_Report_${new Date().toISOString().slice(0,10)}.csv`);
@@ -1735,7 +1721,7 @@ function exportYarnCSV() {
 
 function exportPaymentCSV() {
  let csv = "Date,Centre,Worker Name,Work Details,Quantity,Rate,Total Amount,Status\n";
- (db.payments || []).forEach(p => {
+ db.payments.forEach(p => {
    csv += `"${p.date}","${p.centre||''}","${p.worker}","${p.work||''}","${p.qty||1}","${p.rate||p.amount}","${p.amount}","${p.status||'Paid'}"\n`;
  });
  downloadCSV(csv, `Wage_Disbursement_Report_${new Date().toISOString().slice(0,10)}.csv`);
@@ -1743,7 +1729,7 @@ function exportPaymentCSV() {
 
 function exportTrainingCSV() {
  let csv = "Date,Centre,Trainer,Topic,Participants,Hours\n";
- (db.training || []).forEach(t => {
+ db.training.forEach(t => {
    csv += `"${t.date}","${t.centre}","${t.trainer}","${t.topic}","${t.participants||0}","${t.hours||0}"\n`;
  });
  downloadCSV(csv, `Training_Report_${new Date().toISOString().slice(0,10)}.csv`);
@@ -1751,7 +1737,7 @@ function exportTrainingCSV() {
 
 function exportTasksCSV() {
  let csv = "Task Description,Centre Mapping,Due Date,Priority,Owner,Status\n";
- (db.tasks || []).forEach(t => {
+ db.tasks.forEach(t => {
    csv += `"${t.task}","${t.centre}","${t.due}","${t.priority}","${t.owner||'Project Team'}","${t.status}"\n`;
  });
  downloadCSV(csv, `Action_Tasks_Report_${new Date().toISOString().slice(0,10)}.csv`);
@@ -1759,15 +1745,15 @@ function exportTasksCSV() {
 
 function exportFullSummaryCSV() {
  let csv = "=== 1. PRODUCTION OUTPUT ===\nDate,Centre,Product,Quantity,Unit,Worker/Group,Status\n";
- (db.production || []).forEach(p => {
+ db.production.forEach(p => {
    csv += `"${p.date}","${p.centre}","${p.product}","${p.qty}","${p.unit}","${p.worker||''}","${p.status||'Completed'}"\n`;
  });
  csv += "\n=== 2. YARN STOCK ===\nCentre,Item Specification,Allocated Qty,Received Qty,Pending Qty,Unit\n";
- (db.yarn || []).forEach(y => {
+ db.yarn.forEach(y => {
    csv += `"${y.centre}","${y.item}","${y.allocated}","${y.received||0}","${y.pending}","${y.unit||'kg'}"\n`;
  });
  csv += "\n=== 3. WAGE DISBURSEMENTS ===\nDate,Centre,Worker Name,Qty,Rate,Total Amount,Status\n";
- (db.payments || []).forEach(p => {
+ db.payments.forEach(p => {
    csv += `"${p.date}","${p.centre||''}","${p.worker}","${p.qty||1}","${p.rate||p.amount}","${p.amount}","${p.status||'Paid'}"\n`;
  });
  downloadCSV(csv, `Comprehensive_Ekal_Report_${new Date().toISOString().slice(0,10)}.csv`);
@@ -1800,27 +1786,27 @@ function runAI() {
 
  setTimeout(() => {
    if (q.includes("production") || q.includes("output") || q.includes("highest")) {
-     const totalPcs = (db.production || []).filter(x => x.unit === "Pieces").reduce((s, x) => s + Number(x.qty || 0), 0);
-     const totalMtr = (db.production || []).filter(x => x.unit === "Meter").reduce((s, x) => s + Number(x.qty || 0), 0);
+     const totalPcs = db.production.filter(x => x.unit === "Pieces").reduce((s, x) => s + Number(x.qty || 0), 0);
+     const totalMtr = db.production.filter(x => x.unit === "Meter").reduce((s, x) => s + Number(x.qty || 0), 0);
      resEl.innerHTML = `<b>📊 Production Analysis Insight:</b><br>
      • Total Pieces Produced: <b>${totalPcs.toFixed(2)} pcs</b><br>
      • Total Meter Output: <b>${totalMtr.toFixed(2)} meters</b><br>
-     • Registered Production Logs: <b>${(db.production || []).length} total batches</b>.`;
+     • Registered Production Logs: <b>${db.production.length} total batches</b>.`;
    } else if (q.includes("yarn") || q.includes("stock") || q.includes("pending")) {
-     const pendingYarn = (db.yarn || []).reduce((s, x) => s + Number(x.pending || 0), 0);
+     const pendingYarn = db.yarn.reduce((s, x) => s + Number(x.pending || 0), 0);
      resEl.innerHTML = `<b>🧵 Yarn Stock Inventory Status:</b><br>
      • Total Pending Yarn to Receive: <b>${pendingYarn.toFixed(2)} kg</b><br>
-     • Total Allocation Logs: <b>${(db.yarn || []).length} batches</b>.`;
+     • Total Allocation Logs: <b>${db.yarn.length} batches</b>.`;
    } else if (q.includes("payment") || q.includes("wage") || q.includes("payout")) {
-     const totalPaid = (db.payments || []).filter(p => p.status === 'Paid').reduce((s, x) => s + Number(x.amount || 0), 0);
+     const totalPaid = db.payments.filter(p => p.status === 'Paid').reduce((s, x) => s + Number(x.amount || 0), 0);
      resEl.innerHTML = `<b>💰 Wage Disbursement Overview:</b><br>
      • Total Wages Disbursed: <b>₹${totalPaid.toFixed(2)}</b><br>
-     • Payment Transactions Logged: <b>${(db.payments || []).length}</b>.`;
+     • Payment Transactions Logged: <b>${db.payments.length}</b>.`;
    } else {
      resEl.innerHTML = `<b>ℹ️ System Context Summary:</b><br>
-     • Total Active Centres: <b>${(db.centres || []).length}</b><br>
-     • Total Artisans Registered: <b>${(db.workers || []).length}</b><br>
-     • Open Action Items: <b>${(db.tasks || []).filter(t => t.status !== 'Completed').length}</b>.`;
+     • Total Active Centres: <b>${db.centres.length}</b><br>
+     • Total Artisans Registered: <b>${db.workers.length}</b><br>
+     • Open Action Items: <b>${db.tasks.filter(t => t.status !== 'Completed').length}</b>.`;
    }
  }, 400);
 }
@@ -1849,7 +1835,7 @@ function users() {
    <div class="table-responsive">
      <table>
        <tr><th>User Name</th><th>Email ID</th><th>Assigned Role</th><th>Centre Jurisdiction</th><th>Access Level</th><th>Actions</th></tr>
-       ${(db.users || []).map(u => `
+       ${db.users.map(u => `
          <tr>
            <td><b>${esc(u.name)}</b></td>
            <td>${esc(u.email)}</td>
@@ -1907,7 +1893,7 @@ function userModal(item = null) {
      <div class="field"><label>Centre Jurisdiction</label>
        <select id="fUCentre">
          <option value="All Centres" ${x.centre==="All Centres"?"selected":""}>All Centres</option>
-         ${(db.centres || []).map(c => `<option value="${esc(c.name)}" ${x.centre===c.name?"selected":""}>${esc(c.name)}</option>`).join("")}
+         ${db.centres.map(c => `<option value="${esc(c.name)}" ${x.centre===c.name?"selected":""}>${esc(c.name)}</option>`).join("")}
        </select>
      </div>
      <div class="field"><label>Access Level</label>
@@ -1946,11 +1932,10 @@ function userModal(item = null) {
    };
    if (!data.name || !data.email) return alert("Name and Email are required.");
    
-   if (!db.users) db.users = [];
    if (item) Object.assign(item, data);
    else db.users.push({ id: nextId("u"), ...data });
    
-   saveDB("✓ User access saved and Login menu updated"); closeM(); users();
+   saveDB("✓ User access saved successfully!"); closeM(); users();
  };
 }
 
@@ -1962,9 +1947,9 @@ function toggleCustomRoleInput() {
  }
 }
 
-function editUserModal(id) { userModal((db.users || []).find(u => u.id === id)); }
+function editUserModal(id) { userModal(db.users.find(u => u.id === id)); }
 
-// 14. BACKUP & RESTORE
+// 14. BACKUP & RESTORE WITH EXPLICIT RESTORE ALERT CONFIRMATION
 function backup() {
  document.getElementById("main").innerHTML = `
  <div class="title">
@@ -1997,6 +1982,7 @@ function exportJSONBackup() {
  document.body.appendChild(link);
  link.click();
  document.body.removeChild(link);
+ showToast("✓ Backup JSON file downloaded!");
 }
 
 function restoreJSONBackup() {
@@ -2009,7 +1995,8 @@ function restoreJSONBackup() {
      const parsed = JSON.parse(e.target.result);
      if (parsed.users && parsed.centres) {
        db = parsed;
-       saveDB("✓ System restored successfully from backup");
+       saveDB("✓ System restored successfully!");
+       alert("✓ System database has been restored successfully! Cloud sync is complete.");
        render(current);
      } else {
        alert("Invalid JSON format. System backup files must contain valid database keys.");
