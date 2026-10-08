@@ -231,6 +231,19 @@ const firebaseConfig = {
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
+  // Auth State Observer - Wait until authentication is complete
+let isAuthenticated = false;
+
+firebase.auth().onAuthStateChanged((user) => {
+  if (user) {
+    isAuthenticated = true;
+    console.log("Firebase Authenticated as Anonymous User:", user.uid);
+  } else {
+    firebase.auth().signInAnonymously().catch((err) => {
+      console.error("Anonymous Auth Error:", err);
+    });
+  }
+});
 const database = firebase.database();
 const dbRef = database.ref("ekal_handloom_data");
 
@@ -316,17 +329,28 @@ dbRef.on("value", (snapshot) => {
   }
 });
 
-function saveDB(msg = "✓ Saved successfully") {
- dbRef.set(db, (error) => {
-   if (error) {
-     alert("Error syncing to Firebase Cloud: " + error.message);
-   } else {
-     populateQuickLoginDropdown();
-     showToast(msg);
-   }
- });
-}
+function saveDB(msg = "✓ Saved successfully!") {
+  // Local storage me pehle save karein
+  localStorage.setItem(KEY, JSON.stringify(db));
+  populateQuickLoginDropdown();
 
+  // Agar user abhi authenticate nahi hua, toh 1 second wait karke try karein
+  if (!firebase.auth().currentUser) {
+    firebase.auth().signInAnonymously().then(() => {
+      dbRef.set(db).then(() => showToast(msg)).catch(err => alert("Sync Error: " + err.message));
+    });
+    return;
+  }
+
+  // Firebase Realtime Cloud Push
+  dbRef.set(db).then(() => {
+    showToast(msg);
+  }).catch((err) => {
+    console.error("Firebase Sync Error:", err);
+    alert("⚠️ Cloud Sync Error: " + err.message);
+  });
+}
+  
 function nextId(prefix) {
  return prefix + "_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,6);
 }
