@@ -1,0 +1,2014 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ekal Handloom Management System</title>
+
+<!-- Firebase SDK Libraries (App, Auth, Realtime Database) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f4f7f5;color:#17221e}
+header{height:70px;background:#174c3d;color:#fff;padding:0 22px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,0.15)}
+.logo-container{display:flex;align-items:center;gap:12px}
+.brand-icon{width:36px;height:36px;background:rgba(255,255,255,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff}
+.brand-icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.logo{font-weight:800;font-size:18px;letter-spacing:0.3px}.sub{font-size:11px;opacity:.85;margin-top:2px}
+aside{width:240px;background:#fff;border-right:1px solid #dfe6e2;position:fixed;top:70px;bottom:0;padding:14px;overflow-y:auto;z-index:40}
+nav button{width:100%;border:0;background:#fff;text-align:left;padding:11px 14px;border-radius:8px;margin:3px 0;cursor:pointer;font-size:13.5px;color:#33413b;display:flex;align-items:center;gap:10px;transition:all 0.15s ease}
+nav button svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;opacity:0.75}
+nav button.active,nav button:hover{background:#e8f2ed;color:#174c3d;font-weight:700}
+nav button.active svg,nav button:hover svg{opacity:1;stroke:#174c3d}
+main{margin-left:240px;padding:24px;min-height:calc(100vh - 70px)}
+.title{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:12px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+.card,.panel{background:#fff;border:1px solid #dfe6e2;border-radius:10px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,0.03)}
+.card{display:flex;flex-direction:column;justify-content:space-between;border-top:3px solid #174c3d;transition:transform 0.15s ease, box-shadow 0.15s ease}
+.card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.08)}
+.num{font-size:24px;font-weight:800;margin-top:6px;color:#174c3d;letter-spacing:-0.5px}
+.muted{color:#68746f;font-size:12px}
+.grid{display:grid;grid-template-columns:1.6fr 1fr;gap:16px;margin-top:16px}
+.table-responsive{overflow-x:auto;width:100%;margin-top:10px;border-radius:8px;border:1px solid #edf0ef}
+table{width:100%;border-collapse:collapse;white-space:nowrap}
+th,td{padding:10px 12px;border-bottom:1px solid #edf0ef;text-align:left;font-size:13px}
+th{background:#f6f9f7;color:#4a5752;font-weight:700}
+tr:hover{background:#fafcfb}
+.btn{border:1px solid #c9d4cf;background:#fff;padding:8px 13px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px;transition:all 0.15s ease}
+.btn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.btn:hover{background:#f0f5f2}
+.btn.sm{padding:5px 9px;font-size:11px;border-radius:5px}
+.primary{background:#174c3d;color:#fff;border-color:#174c3d}
+.primary:hover{background:#113b2f}
+.badge{padding:4px 9px;border-radius:12px;font-size:11px;font-weight:600;display:inline-block;background:#e6f4ed;color:#16714b}
+.pending{background:#fff2d8;color:#986500}
+.inactive{background:#fbeae8;color:#9e2a2b}
+.danger{color:#b42318;border-color:#fecdca;background:#fef3f2}.danger:hover{background:#fee4e2}
+.edit-btn{color:#174c3d;border-color:#bce3d4;background:#f0fdf7}.edit-btn:hover{background:#dcfce7}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field label{display:block;font-size:12px;color:#4a5752;font-weight:600;margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;padding:9px;border:1px solid #ccd6d1;border-radius:6px;font-size:13px;background:#fff;outline:none}
+.full{grid-column:1/-1}
+.modal{display:none;position:fixed;inset:0;background:rgba(12,28,23,0.65);align-items:center;justify-content:center;z-index:200;backdrop-filter:blur(2px)}
+.modal.show{display:flex}
+.box{background:#fff;border-radius:12px;padding:22px;width:min(720px,94vw);max-height:90vh;overflow-y:auto;box-shadow:0 20px 25px -5px rgba(0,0,0,0.2)}
+.modalhead{display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;margin-bottom:14px;border-bottom:1px solid #edf0ef}
+.modalhead h3{margin:0;font-size:18px;color:#174c3d}
+.login{position:fixed;inset:0;background:#174c3d;display:flex;align-items:center;justify-content:center;z-index:300}
+.loginbox{background:#fff;padding:32px;border-radius:14px;width:400px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.35)}
+.loginbox input{width:100%;padding:11px;margin:8px 0;border:1px solid #ccd6d1;border-radius:7px;outline:none}
+.toast{position:fixed;right:24px;bottom:24px;background:#174c3d;color:#fff;padding:12px 20px;border-radius:8px;display:none;z-index:400;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+.small{font-size:11px}
+.actions{white-space:nowrap;display:flex;gap:6px}
+.filter-bar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;background:#f9fbfb;padding:10px;border-radius:8px;border:1px solid #e1e8e5}
+.filter-bar input,.filter-bar select{padding:7px 11px;border:1px solid #ccd6d1;border-radius:6px;font-size:12px;outline:none}
+.tag{font-size:10px;padding:2px 6px;border-radius:4px;background:#eee;color:#555;font-weight:700;text-transform:uppercase}
+.tag-admin{background:#dcfce7;color:#15803d}
+.locked-banner{padding:10px 14px;background:#fef2f2;border-left:4px solid #ef4444;color:#991b1b;margin-bottom:14px;border-radius:0 6px 6px 0;font-size:13px;display:flex;align-items:center;gap:8px}
+
+.admin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px;margin-top:18px}
+.admin-card{background:#fff;border:1px solid #dfe6e2;border-radius:12px;padding:20px;cursor:pointer;transition:all 0.2s ease;box-shadow:0 2px 6px rgba(0,0,0,0.02);display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
+.admin-card::before{content:"";position:absolute;top:0;left:0;width:4px;height:100%;background:#174c3d;opacity:0;transition:opacity 0.2s ease}
+.admin-card:hover{transform:translateY(-3px);box-shadow:0 8px 18px rgba(23,76,61,0.12);border-color:#bce3d4}
+.admin-card:hover::before{opacity:1}
+.admin-card-header{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.admin-card-icon{width:42px;height:42px;border-radius:10px;background:#e8f2ed;display:flex;align-items:center;justify-content:center;color:#174c3d;flex-shrink:0}
+.admin-card-icon svg{width:22px;height:22px;stroke:#174c3d;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.admin-card-title{margin:0;color:#174c3d;font-size:16px;font-weight:700}
+.admin-card-desc{color:#68746f;font-size:12.5px;line-height:1.45;margin:0 0 14px 0}
+.admin-card-footer{display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:600;color:#174c3d;border-top:1px solid #f0f4f2;padding-top:10px;margin-top:auto}
+
+.view-only-lock{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:6px;background:#fef2f2;color:#991b1b;border:1px solid #fecaca;font-size:11px;font-weight:600}
+.view-only-lock svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+@media print {
+  header, aside, .filter-bar, .btn, .locked-banner { display: none !important; }
+  main { margin-left: 0 !important; padding: 0 !important; }
+  .panel { border: none !important; box-shadow: none !important; margin-bottom: 20px !important; }
+  body { background: #fff !important; }
+}
+
+@media(max-width:900px){aside{width:200px}.cards{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}main{margin-left:200px}}
+@media(max-width:650px){aside{display:none}main{margin-left:0;padding:16px}.cards,.form{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div id="login" class="login">
+  <div class="loginbox">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <div style="width:38px;height:38px;background:#174c3d;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff">
+        <svg style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      </div>
+      <div>
+        <h2 style="margin:0;color:#174c3d;font-size:20px">Ekal Handloom</h2>
+        <p class="muted" style="margin:0">Project Management Portal</p>
+      </div>
+    </div>
+    <div style="margin:16px 0">
+      <label class="small" style="font-weight:bold;color:#555">Select Role / User Login Profile:</label>
+      <select id="quickLogin" onchange="applyQuickLogin()" style="width:100%;padding:9px;margin:4px 0 10px 0;border:1px solid #ccd6d1;border-radius:6px;font-size:12px">
+        <!-- Dynamically populated from db.users -->
+      </select>
+      <input id="loginEmail" placeholder="Enter Login Email ID" value="">
+      <input id="loginPass" type="password" placeholder="Enter Password" value="">
+    </div>
+    <button class="btn primary" id="loginBtn" style="width:100%;justify-content:center;padding:10px">
+      <svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
+      Sign In
+    </button>
+  </div>
+</div>
+
+<header>
+  <div class="logo-container">
+    <div class="brand-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+    </div>
+    <div>
+      <div class="logo">Ekal Handloom Management System</div>
+      <div class="sub">Ekal Gramothan Foundation • Project Control Portal</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <span id="sessionUser" class="small" style="background:rgba(255,255,255,0.15);padding:6px 12px;border-radius:20px;border:1px solid rgba(255,255,255,0.25)"></span>
+    <button class="btn" id="logoutBtn" style="background:#fff;color:#174c3d;border:0">
+      <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg> Logout
+    </button>
+  </div>
+</header>
+
+<aside>
+<nav id="nav">
+  <button data-page="dashboard" class="active">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+    Dashboard
+  </button>
+  <button data-page="attendance">
+    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    Attendance
+  </button>
+  <button data-page="centres">
+    <svg viewBox="0 0 24 24"><path d="M3 21h18M3 7v14M21 7v14M6 21V10a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v11M9 21v-4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4"/></svg>
+    Centres
+  </button>
+  <button data-page="production">
+    <svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+    Production
+  </button>
+  <button data-page="workers">
+    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    Women & Trainees
+  </button>
+  <button data-page="yarn">
+    <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+    Yarn & Stock
+  </button>
+  <button data-page="payments">
+    <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    Payments
+  </button>
+  <button data-page="training">
+    <svg viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+    Training
+  </button>
+  <button data-page="tasks">
+    <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    Tasks & Followup
+  </button>
+  <button data-page="reports">
+    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+    Reports
+  </button>
+  <button data-page="ai">
+    <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>
+    AI Assistant
+  </button>
+  <button data-page="users" id="nav-users" style="display:none">
+    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    User Access & Roles
+  </button>
+  <button data-page="backup" id="nav-backup">
+    <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+    Backup & Restore
+  </button>
+  <button data-page="adminpanel" id="nav-adminpanel">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Executive Control Hub
+  </button>
+</nav>
+</aside>
+
+<main id="main"></main>
+
+<div id="modal" class="modal">
+  <div class="box">
+    <div class="modalhead">
+      <h3 id="mt">Modal Title</h3>
+      <button class="btn sm" id="closeModal">✕ Close</button>
+    </div>
+    <div id="mb"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+"use strict";
+
+// 1. Firebase Configuration (Apne Firebase Console Project credentials paste karein)
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+// 2. Firebase Initialize
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+const dbRef = database.ref("ekal_handloom_data");
+
+// 3. Background Anonymous Authentication
+firebase.auth().signInAnonymously().then(() => {
+  console.log("Firebase Auth Connected Successfully.");
+}).catch((error) => {
+  console.error("Auth Error:", error);
+});
+
+const KEY = "ekal_handloom_persistent_v13";
+const SESSION = "ekal_handloom_session_v13";
+
+const demo = {
+ users: [
+  {id: "u1", name: "System Administrator", email: "admin@ekal.local", pass: "admin123", role: "ADMINISTRATOR", centre: "All Centres", accessLevel: "FULL", phone: "9876543210"},
+  {id: "u2", name: "Executive Director", email: "ed@ekal.local", pass: "ed123", role: "EXECUTIVE_DIRECTOR", centre: "All Centres", accessLevel: "FULL", phone: "9876543216"},
+  {id: "u3", name: "Executive Assistant", email: "ea@ekal.local", pass: "ea123", role: "EXECUTIVE_ASSISTANT", centre: "All Centres", accessLevel: "EDIT", phone: "9876543217"},
+  {id: "u4", name: "Incharge Dindori", email: "dindori@ekal.local", pass: "din123", role: "CENTRE_INCHARGE", centre: "IVD Dindori", accessLevel: "EDIT", phone: "9876543211"},
+  {id: "u5", name: "Incharge Junnardeo", email: "junnardeo@ekal.local", pass: "jun123", role: "CENTRE_INCHARGE", centre: "IVD Junnardeo", accessLevel: "EDIT", phone: "9876543218"},
+  {id: "u6", name: "Incharge Bisra", email: "bisra@ekal.local", pass: "bis123", role: "CENTRE_INCHARGE", centre: "IVD Bisra", accessLevel: "EDIT", phone: "9876543219"},
+  {id: "u7", name: "Incharge Karanjo", email: "karanjo@ekal.local", pass: "kar123", role: "CENTRE_INCHARGE", centre: "GRC Karanjo", accessLevel: "EDIT", phone: "9876543220"},
+  {id: "u8", name: "Anjali Gupta", email: "hr@ekal.local", pass: "hr123", role: "HR", centre: "All Centres", accessLevel: "VIEW_ONLY", phone: "9876543212"},
+  {id: "u9", name: "Vikram Singh", email: "project_int@ekal.local", pass: "phead123", role: "PROJECT_HEAD_INTERNAL", centre: "All Centres", accessLevel: "EDIT", phone: "9876543213"},
+  {id: "u10", name: "Suresh Kumar", email: "project_ext@ekal.local", pass: "pext123", role: "PROJECT_HEAD_EXTERNAL", centre: "All Centres", accessLevel: "EDIT", phone: "9876543214"},
+  {id: "u11", name: "Priya Patel", email: "coord@ekal.local", pass: "coord123", role: "PROJECT_COORDINATOR", centre: "All Centres", accessLevel: "EDIT", phone: "9876543215"},
+  {id: "u12", name: "Rajesh Sharma", email: "officeadmin@ekal.local", pass: "office123", role: "OFFICE_ADMIN", centre: "All Centres", accessLevel: "EDIT", phone: "9876543221"}
+ ],
+ customRoles: ["OFFICE_ADMIN"],
+ centres: [
+  {id: "c1", name: "IVD Dindori", state: "Madhya Pradesh", incharge: "Incharge Dindori", opening: "2026-06-02", status: "Active", women: 11, looms: 8},
+  {id: "c2", name: "IVD Junnardeo", state: "Madhya Pradesh", incharge: "Incharge Junnardeo", opening: "2026-09-12", status: "Active", women: 6, looms: 5},
+  {id: "c3", name: "IVD Bisra", state: "Odisha", incharge: "Incharge Bisra", opening: "2026-07-27", status: "Active", women: 8, looms: 6},
+  {id: "c4", name: "GRC Karanjo", state: "Jharkhand", incharge: "Incharge Karanjo", opening: "2026-06-24", status: "Active", women: 12, looms: 10}
+ ],
+ production: [
+  {id: "p1", date: "2026-09-26", centre: "IVD Dindori", product: "Gamcha", qty: 8, unit: "Pieces", worker: "Meena Devi Group", quality: "Good", notes: "Standard Red border", hours: 6, status: "Completed", estTime: "0 Hours"},
+  {id: "p2", date: "2026-09-26", centre: "IVD Dindori", product: "White Fabric", qty: 30, unit: "Meter", worker: "Sunita Maravi", quality: "Good", notes: "2/20 count cotton", hours: 8, status: "Completed", estTime: "0 Hours"},
+  {id: "p3", date: "2026-09-28", centre: "IVD Junnardeo", product: "Saree", qty: 5, unit: "Pieces", worker: "Anita Sahu", quality: "Good", notes: "Silk Cotton", hours: 12, status: "Pending", estTime: "2 Days"}
+ ],
+ workers: [
+  {id: "w1", name: "Meena Devi", centre: "IVD Dindori", role: "Senior Weaver", rate: 120, status: "Active", phone: "9123456780"},
+  {id: "w2", name: "Sunita Maravi", centre: "IVD Dindori", role: "Trainee", rate: 90, status: "Active", phone: "9123456781"},
+  {id: "w3", name: "Anita Sahu", centre: "IVD Junnardeo", role: "Weaver", rate: 110, status: "Active", phone: "9123456782"},
+  {id: "w4", name: "Suman Kumari", centre: "IVD Bisra", role: "Weaver", rate: 100, status: "Active", phone: "9123456783"},
+  {id: "w5", name: "Pooja Munda", centre: "GRC Karanjo", role: "Weaver", rate: 105, status: "Active", phone: "9123456784"}
+ ],
+ yarn: [
+  {id: "y1", centre: "GRC Karanjo", item: "2/20 White Yarn", allocated: 20, received: 18, pending: 2, unit: "kg", status: "Pending", supplier: "Varanasi Mills", allocDate: "2026-09-10", recDate: "2026-09-15"},
+  {id: "y2", centre: "IVD Dindori", item: "30s Colored Yarn", allocated: 25, received: 20, pending: 5, unit: "kg", status: "Pending", supplier: "Bhopal Dept", allocDate: "2026-09-12", recDate: "2026-09-18"}
+ ],
+ payments: [
+  {id: "pay1", date: "2026-09-20", centre: "IVD Dindori", worker: "Meena Devi", work: "8 Gamchas", qty: 8, rate: 120, amount: 960, status: "Paid", ref: "UPI-992812"},
+  {id: "pay2", date: "2026-09-25", centre: "IVD Junnardeo", worker: "Anita Sahu", work: "5 Sarees", qty: 5, rate: 200, amount: 1000, status: "Pending", ref: "-"}
+ ],
+ training: [
+  {id: "tr1", date: "2026-09-15", centre: "IVD Dindori", trainer: "Rajesh Weaver Expert", topic: "Jacquard Design", participants: 12, hours: 6}
+ ],
+ tasks: [
+  {id: "t1", task: "Daily centre production update", centre: "All Centres", due: "2026-09-30", priority: "High", status: "Open", owner: "Project Team"},
+  {id: "t2", task: "Yarn Stock Audit", centre: "IVD Dindori", due: "2026-10-02", priority: "Medium", status: "In Progress", owner: "Dindori Incharge"}
+ ],
+ attendance: [
+  {id: "att1", date: "2026-09-28", centre: "IVD Dindori", workerId: "w1", workerName: "Meena Devi", status: "Present"},
+  {id: "att2", date: "2026-09-29", centre: "IVD Dindori", workerId: "w1", workerName: "Meena Devi", status: "Half Day"},
+  {id: "att3", date: "2026-09-30", centre: "IVD Dindori", workerId: "w1", workerName: "Meena Devi", status: "Absent"}
+ ]
+};
+
+let db = loadDB();
+let current = "dashboard";
+
+// Realtime Observer: Live synchronization for changes
+dbRef.on("value", (snapshot) => {
+  const cloudData = snapshot.val();
+  if (cloudData) {
+    db = cloudData;
+    localStorage.setItem(KEY, JSON.stringify(db));
+    populateQuickLoginDropdown();
+    render(current);
+  }
+});
+
+function loadDB() {
+ try {
+  const raw = localStorage.getItem(KEY);
+  if (raw) {
+    const data = JSON.parse(raw);
+    if (!data.customRoles) data.customRoles = ["OFFICE_ADMIN"];
+    return data;
+  }
+ } catch(e){}
+ localStorage.setItem(KEY, JSON.stringify(demo));
+ return JSON.parse(JSON.stringify(demo));
+}
+
+// Updated Save Function with Notification Toast & Popup Alert Confirmation
+function saveDB(msg = "✓ Saved successfully!") {
+ localStorage.setItem(KEY, JSON.stringify(db));
+ populateQuickLoginDropdown();
+ 
+ dbRef.set(db).then(() => {
+   showToast(msg);
+ }).catch((err) => {
+   console.error("Firebase Sync Error:", err);
+   alert("⚠️ Cloud Sync Failed: " + err.message);
+   showToast("⚠️ Cloud Sync Error");
+ });
+}
+
+function nextId(prefix) {
+ return prefix + "_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,6);
+}
+
+function esc(s) {
+ return String(s ?? "").replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+}
+
+function fmtNum(v) {
+ const n = Number(v || 0);
+ return isNaN(n) ? "0.00" : n.toFixed(2);
+}
+
+function getCurrentUser() {
+ return JSON.parse(localStorage.getItem(SESSION) || "null");
+}
+
+function populateQuickLoginDropdown() {
+ const selectEl = document.getElementById("quickLogin");
+ if (!selectEl) return;
+ let html = `<option value="">-- Choose User Profile --</option>`;
+ db.users.forEach(u => {
+   html += `<option value="${esc(u.email)}">${esc(u.name)} (${esc(u.role)}) - ${esc(u.email)}</option>`;
+ });
+ selectEl.innerHTML = html;
+}
+
+function applyQuickLogin() {
+ const em = document.getElementById("quickLogin").value;
+ if(em) {
+   document.getElementById("loginEmail").value = em;
+   const matchedUser = db.users.find(u => u.email.toLowerCase() === em.toLowerCase());
+   if (matchedUser && matchedUser.pass) {
+     document.getElementById("loginPass").value = matchedUser.pass;
+   }
+ }
+}
+
+function canEditModule(mod, targetCentre = null) {
+ const u = getCurrentUser();
+ if (!u) return false;
+ if (u.accessLevel === "VIEW_ONLY" || u.role === "HR") return false;
+ if (u.role === "ADMINISTRATOR" || u.role === "EXECUTIVE_DIRECTOR" || u.role === "EXECUTIVE_ASSISTANT" || u.accessLevel === "FULL") return true;
+ 
+ if (u.role === "CENTRE_INCHARGE" || u.role === "OFFICE_ADMIN") {
+   if (targetCentre && u.centre !== "All Centres" && targetCentre !== u.centre) {
+     return false; 
+   }
+   return ["attendance", "production", "centres", "yarn", "workers", "payments", "tasks"].includes(mod);
+ }
+ if (mod === "training") {
+   return ["PROJECT_HEAD_INTERNAL", "PROJECT_HEAD_EXTERNAL", "PROJECT_COORDINATOR"].includes(u.role);
+ }
+ return u.accessLevel === "EDIT";
+}
+
+function getActionCellHTML(mod, targetCentre, editJsCall, delJsCall) {
+ const canEdit = canEditModule(mod, targetCentre);
+ if (canEdit) {
+   return `<button class="btn sm edit-btn" onclick="${editJsCall}"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>
+   <button class="btn sm danger" onclick="${delJsCall}"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Delete</button>`;
+ } else {
+   return `<span class="view-only-lock"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> View Only</span>`;
+ }
+}
+
+function badge(s) {
+ let cls = "badge";
+ if (s === "Pending" || s === "Open" || s === "Medium" || s === "Half Day" || s === "In Progress") cls = "badge pending";
+ else if (s === "Inactive" || s === "High" || s === "Absent") cls = "badge inactive";
+ return `<span class="${cls}">${esc(s)}</span>`;
+}
+
+function showToast(msg) {
+ const t = document.getElementById("toast");
+ t.textContent = msg;
+ t.style.display = "block";
+ clearTimeout(window._toast);
+ window._toast = setTimeout(() => t.style.display = "none", 2500);
+}
+
+function modal(title, html) {
+ document.getElementById("mt").textContent = title;
+ document.getElementById("mb").innerHTML = html;
+ document.getElementById("modal").classList.add("show");
+}
+
+function closeM() {
+ document.getElementById("modal").classList.remove("show");
+}
+
+document.getElementById("closeModal").onclick = closeM;
+document.getElementById("logoutBtn").onclick = () => {
+ localStorage.removeItem(SESSION);
+ location.reload();
+};
+
+function login() {
+ const em = document.getElementById("loginEmail").value.trim().toLowerCase();
+ const pw = document.getElementById("loginPass").value;
+
+ if(!em) {
+   alert("Kripya Email ID darj karein.");
+   return;
+ }
+ if(!pw) {
+   alert("Kripya Password darj karein.");
+   return;
+ }
+
+ const u = db.users.find(x => x.email.toLowerCase() === em && (x.pass ? x.pass === pw : true));
+ if (!u) {
+   alert("Galat Email ID ya Password!");
+   return;
+ }
+
+ localStorage.setItem(SESSION, JSON.stringify(u));
+ startApp();
+ showToast(`Welcome, ${u.name}!`);
+}
+
+document.getElementById("loginBtn").onclick = login;
+
+function startApp() {
+ populateQuickLoginDropdown();
+ const s = getCurrentUser();
+ if (!s) {
+   document.getElementById("login").style.display = "flex";
+   return;
+ }
+ document.getElementById("login").style.display = "none";
+ document.getElementById("sessionUser").innerHTML = `<b>${esc(s.name)}</b> <span class="tag tag-admin">${esc(s.role)}</span> ${s.centre !== 'All Centres' ? `(${esc(s.centre)})` : ''}`;
+
+ const navUsersBtn = document.getElementById("nav-users");
+ if (navUsersBtn) {
+   if (s.role === "ADMINISTRATOR") {
+     navUsersBtn.style.display = "flex";
+   } else {
+     navUsersBtn.style.display = "none";
+   }
+ }
+
+ render(current);
+}
+
+function go(p) {
+ current = p;
+ document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("active", b.dataset.page === p));
+ render(p);
+}
+
+document.querySelectorAll("#nav button").forEach(b => b.onclick = () => go(b.dataset.page));
+
+function render(p) {
+ const handlers = {
+   dashboard, adminpanel, attendance, centres, production, workers, yarn, payments, training, tasks, reports, ai, users, backup
+ };
+ if (handlers[p]) handlers[p]();
+}
+
+function val(id) {
+ return document.getElementById(id)?.value?.trim() || "";
+}
+
+function getLockNotice(mod) {
+ if (!canEditModule(mod)) {
+   return `<div class="locked-banner"><svg style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> <div><b>View Only / Restricted Access Mode:</b> Your role (${getCurrentUser()?.role}) is restricted from modifying this section.</div></div>`;
+ }
+ return "";
+}
+
+function delRecord(mod, id) {
+ if(!confirm("Kya aap is record ko delete karna chahte hain?")) return;
+ db[mod] = db[mod].filter(x => x.id !== id);
+ saveDB("✓ Record deleted successfully!");
+ render(current);
+}
+
+function downloadCSV(csvContent, fileName) {
+ const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+ const link = document.createElement("a");
+ const url = URL.createObjectURL(blob);
+ link.setAttribute("href", url);
+ link.setAttribute("download", fileName);
+ link.style.visibility = 'hidden';
+ document.body.appendChild(link);
+ link.click();
+ document.body.removeChild(link);
+}
+
+// 1. DASHBOARD
+function dashboard() {
+ const selectedCentre = val("dashCentreFilter") || "All";
+ 
+ const filteredProd = selectedCentre === "All" ? db.production : db.production.filter(x => x.centre === selectedCentre);
+ const filteredYarn = selectedCentre === "All" ? db.yarn : db.yarn.filter(x => x.centre === selectedCentre);
+ const filteredWorkers = selectedCentre === "All" ? db.workers : db.workers.filter(x => x.centre === selectedCentre);
+ const filteredPay = selectedCentre === "All" ? db.payments : db.payments.filter(x => x.centre === selectedCentre);
+ const filteredCentres = selectedCentre === "All" ? db.centres : db.centres.filter(x => x.name === selectedCentre);
+ const filteredTasks = selectedCentre === "All" ? db.tasks : db.tasks.filter(x => x.centre === "All Centres" || x.centre === selectedCentre);
+
+ const pcs = filteredProd.filter(x => x.unit === "Pieces").reduce((s, x) => s + Number(x.qty || 0), 0);
+ const meters = filteredProd.filter(x => x.unit === "Meter").reduce((s, x) => s + Number(x.qty || 0), 0);
+ const totalAllocatedYarn = filteredYarn.reduce((s, x) => s + Number(x.allocated || 0), 0);
+ const totalPendingYarn = filteredYarn.reduce((s, x) => s + Number(x.pending || 0), 0);
+ const totalPayout = filteredPay.filter(p => p.status === 'Paid').reduce((s, x) => s + Number(x.amount || 0), 0);
+ const totalLooms = filteredCentres.reduce((s, x) => s + Number(x.looms || 0), 0);
+ const openTasks = filteredTasks.filter(x => x.status !== "Completed").length;
+
+ document.getElementById("main").innerHTML = `
+ <div class="title">
+   <div>
+     <h2 style="margin:0;color:#174c3d;font-size:22px">Executive Performance Dashboard</h2>
+     <span class="muted">Real-time Operations & Strategic Metrics • Logged in as: <b>${getCurrentUser()?.name}</b> (${getCurrentUser()?.role})</span>
+   </div>
+   <div style="display:flex;gap:10px;align-items:center">
+     <div>
+       <select id="dashCentreFilter" onchange="dashboard()" style="padding:8px 12px;border:1px solid #ccd6d1;border-radius:6px;font-size:13px;font-weight:600;background:#fff;color:#174c3d">
+         <option value="All" ${selectedCentre === "All" ? "selected" : ""}>🏢 All Centres Combined</option>
+         ${db.centres.map(c => `<option value="${esc(c.name)}" ${c.name === selectedCentre ? "selected" : ""}>📍 ${esc(c.name)}</option>`).join("")}
+       </select>
+     </div>
+     <button class="btn primary" onclick="go('production')">
+       <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Record Production
+     </button>
+   </div>
+ </div>
+
+ <div class="cards">
+   <div class="card">
+     <div>
+       <div class="muted" style="text-transform:uppercase;font-size:11px;font-weight:700;letter-spacing:0.5px">Active Centres</div>
+       <div class="num">${db.centres.filter(x => x.status === "Active").length} <span style="font-size:14px;color:#68746f;font-weight:normal">/ ${db.centres.length} Total</span></div>
+     </div>
+     <div style="margin-top:8px;font-size:11px;color:#16714b;font-weight:600">✓ Fully Operational</div>
+   </div>
+   <div class="card">
+     <div>
+       <div class="muted" style="text-transform:uppercase;font-size:11px;font-weight:700;letter-spacing:0.5px">Artisans & Looms</div>
+       <div class="num">${filteredWorkers.length} <span style="font-size:14px;color:#68746f;font-weight:normal">Artisans</span></div>
+     </div>
+     <div style="margin-top:8px;font-size:11px;color:#33413b"><b>${totalLooms}</b> Total Active Looms</div>
+   </div>
+   <div class="card">
+     <div>
+       <div class="muted" style="text-transform:uppercase;font-size:11px;font-weight:700;letter-spacing:0.5px">Total Output</div>
+       <div class="num" style="font-size:20px">${fmtNum(pcs)} <span style="font-size:13px">pcs</span> / ${fmtNum(meters)} <span style="font-size:13px">mtr</span></div>
+     </div>
+     <div style="margin-top:8px;font-size:11px;color:#174c3d;font-weight:600">Completed Production</div>
+   </div>
+   <div class="card">
+     <div>
+       <div class="muted" style="text-transform:uppercase;font-size:11px;font-weight:700;letter-spacing:0.5px">Yarn Stock Status</div>
+       <div class="num">${fmtNum(totalAllocatedYarn)} <span style="font-size:13px">kg</span></div>
+     </div>
+     <div style="margin-top:8px;font-size:11px;color:${totalPendingYarn > 0 ? '#b42318' : '#16714b'};font-weight:600">
+       Pending: ${fmtNum(totalPendingYarn)} kg
+     </div>
+   </div>
+   <div class="card">
+     <div>
+       <div class="muted" style="text-transform:uppercase;font-size:11px;font-weight:700;letter-spacing:0.5px">Total Wages Paid</div>
+       <div class="num">₹${fmtNum(totalPayout)}</div>
+     </div>
+     <div style="margin-top:8px;font-size:11px;color:#16714b;font-weight:600">✓ Disbursed Wages</div>
+   </div>
+ </div>
+
+ <div class="grid">
+   <div class="panel">
+     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+       <h3 style="margin:0;color:#174c3d">Centres Operational & Output Summary</h3>
+       <button class="btn sm" onclick="go('centres')">View All Centres</button>
+     </div>
+     <div class="table-responsive">
+       <table>
+         <thead>
+           <tr><th>Centre Name</th><th>State In-Charge</th><th>Opening Date</th><th>Looms</th><th>Women Count</th><th>Status</th></tr>
+         </thead>
+         <tbody>
+         ${filteredCentres.map(c => {
+           const cWorkers = db.workers.filter(w => w.centre === c.name).length;
+           return `<tr>
+             <td><b>${esc(c.name)}</b></td>
+             <td>${esc(c.state)} - ${esc(c.incharge)}</td>
+             <td>${esc(c.opening || '-')}</td>
+             <td><b>${c.looms || 0}</b></td>
+             <td><b>${cWorkers}</b></td>
+             <td>${badge(c.status)}</td>
+           </tr>`;
+         }).join("")}
+         </tbody>
+       </table>
+     </div>
+   </div>
+   
+   <div class="panel">
+     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+       <h3 style="margin:0;color:#174c3d">Action Items (${openTasks})</h3>
+       <button class="btn sm" onclick="go('tasks')">Manage Tasks</button>
+     </div>
+     <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+       ${filteredTasks.map(t => `
+         <div style="padding:10px;border:1px solid #edf0ef;border-radius:6px;background:#fafcfb">
+           <div style="display:flex;justify-content:space-between;align-items:center">
+             <b>${esc(t.task)}</b>${badge(t.status)}
+           </div>
+           <div class="muted" style="margin-top:4px">Centre: <b>${esc(t.centre)}</b> | Due: ${esc(t.due)}</div>
+         </div>
+       `).join("")}
+     </div>
+   </div>
+ </div>
+
+ <div class="panel" style="margin-top:16px">
+   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+     <h3 style="margin:0;color:#174c3d">Recent Production Activity</h3>
+     <button class="btn sm" onclick="go('production')">View Production Log</button>
+   </div>
+   <div class="table-responsive">
+     <table>
+       <tr><th>Date</th><th>Centre</th><th>Product Name</th><th>Quantity</th><th>Artisan / Group</th><th>Status</th></tr>
+       ${filteredProd.slice(-5).reverse().map(p => `
+         <tr>
+           <td>${esc(p.date)}</td>
+           <td><b>${esc(p.centre)}</b></td>
+           <td>${esc(p.product)}</td>
+           <td><b>${fmtNum(p.qty)} ${esc(p.unit === 'Pieces' ? 'piece' : 'meter')}</b></td>
+           <td>${esc(p.worker || '-')}</td>
+           <td>${badge(p.status || 'Completed')}</td>
+         </tr>
+       `).join("")}
+     </table>
+   </div>
+ </div>
+ `;
+}
+
+// 2. EXECUTIVE CONTROL HUB
+function adminpanel() {
+ const isAdmin = getCurrentUser()?.role === "ADMINISTRATOR";
+ document.getElementById("main").innerHTML = `
+ <div class="title">
+   <div>
+     <h2 style="margin:0;color:#174c3d;font-size:22px">Executive Control Hub</h2>
+     <span class="muted">Centralized Management Controls & Operational Modules</span>
+   </div>
+ </div>
+ 
+ <div class="admin-grid">
+   <div class="admin-card" onclick="go('centres')">
+     <div>
+       <div class="admin-card-header">
+         <div class="admin-card-icon">
+           <svg viewBox="0 0 24 24"><path d="M3 21h18M3 7v14M21 7v14M6 21V10a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v11M9 21v-4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4"/></svg>
+         </div>
+         <h3 class="admin-card-title">Centres Control</h3>
+       </div>
+       <p class="admin-card-desc">Manage handloom production centres, state in-charge details, opening dates & active loom counts.</p>
+     </div>
+     <div class="admin-card-footer">
+       <span>Manage Centres</span>
+       <span>→</span>
+     </div>
+   </div>
+
+   <div class="admin-card" onclick="go('production')">
+     <div>
+       <div class="admin-card-header">
+         <div class="admin-card-icon">
+           <svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+         </div>
+         <h3 class="admin-card-title">Production Logs</h3>
+       </div>
+       <p class="admin-card-desc">Monitor daily piece & meter output records across all operating handloom clusters.</p>
+     </div>
+     <div class="admin-card-footer">
+       <span>View Production</span>
+       <span>→</span>
+     </div>
+   </div>
+
+   <div class="admin-card" onclick="go('workers')">
+     <div>
+       <div class="admin-card-header">
+         <div class="admin-card-icon">
+           <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+         </div>
+         <h3 class="admin-card-title">Artisans & Trainees</h3>
+       </div>
+       <p class="admin-card-desc">Add and manage profiles of skilled weavers, trainees, and female artisan empowerment groups.</p>
+     </div>
+     <div class="admin-card-footer">
+       <span>Manage Artisans</span>
+       <span>→</span>
+     </div>
+   </div>
+
+   <div class="admin-card" onclick="go('yarn')">
+     <div>
+       <div class="admin-card-header">
+         <div class="admin-card-icon">
+           <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+         </div>
+         <h3 class="admin-card-title">Yarn & Inventory</h3>
+       </div>
+       <p class="admin-card-desc">Allocate raw yarn stocks in kg, track supplier details, and monitor pending deliveries.</p>
+     </div>
+     <div class="admin-card-footer">
+       <span>Manage Stock</span>
+       <span>→</span>
+     </div>
+   </div>
+
+   <div class="admin-card" onclick="go('payments')">
+     <div>
+       <div class="admin-card-header">
+         <div class="admin-card-icon">
+           <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+         </div>
+         <h3 class="admin-card-title">Payments & Wages</h3>
+       </div>
+       <p class="admin-card-desc">Log piece-rate wage calculations and track payment disbursements to artisans.</p>
+     </div>
+     <div class="admin-card-footer">
+       <span>Track Payments</span>
+       <span>→</span>
+     </div>
+   </div>
+
+   <div class="admin-card" onclick="go('training')">
+     <div>
+       <div class="admin-card-header">
+         <div class="admin-card-icon">
+           <svg viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+         </div>
+         <h3 class="admin-card-title">Training Logs</h3>
+       </div>
+       <p class="admin-card-desc">Track skill development programs, expert trainer logs, and artisan training hours.</p>
+     </div>
+     <div class="admin-card-footer">
+       <span>View Training</span>
+       <span>→</span>
+     </div>
+   </div>
+
+   <div class="admin-card" onclick="go('tasks')">
+     <div>
+       <div class="admin-card-header">
+         <div class="admin-card-icon">
+           <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+         </div>
+         <h3 class="admin-card-title">Tasks & Followups</h3>
+       </div>
+       <p class="admin-card-desc">Assign action items, set priority levels, and track operational progress across centres.</p>
+     </div>
+     <div class="admin-card-footer">
+       <span>Manage Tasks</span>
+       <span>→</span>
+     </div>
+   </div>
+
+   ${isAdmin ? `
+   <div class="admin-card" onclick="go('users')">
+     <div>
+       <div class="admin-card-header">
+         <div class="admin-card-icon">
+           <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+         </div>
+         <h3 class="admin-card-title">User Roles & Access</h3>
+       </div>
+       <p class="admin-card-desc">Manage portal access permissions, centre assignments, and user role levels.</p>
+     </div>
+     <div class="admin-card-footer">
+       <span>Manage Access</span>
+       <span>→</span>
+     </div>
+   </div>` : ''}
+
+   <div class="admin-card" onclick="go('backup')">
+     <div>
+       <div class="admin-card-header">
+         <div class="admin-card-icon">
+           <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+         </div>
+         <h3 class="admin-card-title">Backup & Restore</h3>
+       </div>
+       <p class="admin-card-desc">Export database snapshots as JSON files or restore previous system backups safely.</p>
+     </div>
+     <div class="admin-card-footer">
+       <span>Backup System</span>
+       <span>→</span>
+     </div>
+   </div>
+ </div>
+ `;
+}
+
+// 3. ATTENDANCE
+function attendance() {
+ const canEdit = canEditModule("attendance");
+ const u = getCurrentUser();
+ let selectedCentre = val("attCentre") || (u.centre !== "All Centres" ? u.centre : "All");
+ let selectedDate = val("attDate") || new Date().toISOString().slice(0,10);
+
+ const displayWorkers = selectedCentre === "All" 
+   ? db.workers 
+   : db.workers.filter(w => w.centre === selectedCentre);
+
+ document.getElementById("main").innerHTML = `
+ ${getLockNotice("attendance")}
+ <div class="title">
+   <h2>Centre-wise Attendance & Summary Counter</h2>
+   ${canEdit ? `<button class="btn primary" onclick="workerModal(null, '${selectedCentre !== "All" ? esc(selectedCentre) : ""}')"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Worker Details</button>` : ""}
+ </div>
+
+ <div class="filter-bar">
+   <div>
+     <label class="small"><b>Centre Dropdown:</b></label><br>
+     <select id="attCentre" onchange="attendance()" ${u.centre !== "All Centres" ? "disabled" : ""}>
+       <option value="All" ${selectedCentre === "All" ? "selected" : ""}>All Centres (Combined View)</option>
+       ${db.centres.map(c => `<option value="${esc(c.name)}" ${c.name === selectedCentre ? "selected" : ""}>${esc(c.name)}</option>`).join("")}
+     </select>
+   </div>
+   <div>
+     <label class="small"><b>Date:</b></label><br>
+     <input id="attDate" type="date" value="${selectedDate}" onchange="attendance()">
+   </div>
+ </div>
+
+ <div class="panel">
+   <h3>Mark Daily Attendance (${selectedDate})</h3>
+   <div class="table-responsive">
+     <table>
+       <tr><th>Worker Name</th><th>Centre</th><th>Role</th><th>Phone</th><th>Attendance Status</th></tr>
+       ${displayWorkers.map(w => {
+         const existing = db.attendance.find(a => a.date === selectedDate && a.workerId === w.id);
+         const status = existing ? existing.status : "Present";
+         const canEditThis = canEdit && (u.centre === "All Centres" || u.centre === w.centre);
+         return `
+           <tr>
+             <td><b>${esc(w.name)}</b></td>
+             <td><span class="tag">${esc(w.centre)}</span></td>
+             <td>${esc(w.role)}</td>
+             <td>${esc(w.phone || '-')}</td>
+             <td>
+               <select id="status_${w.id}" ${!canEditThis ? "disabled" : ""}>
+                 <option value="Present" ${status==="Present"?"selected":""}>Present</option>
+                 <option value="Half Day" ${status==="Half Day"?"selected":""}>Half Day</option>
+                 <option value="Absent" ${status==="Absent"?"selected":""}>Absent</option>
+               </select>
+             </td>
+           </tr>
+         `;
+       }).join("") || '<tr><td colspan="5">No workers registered in selected centre.</td></tr>'}
+     </table>
+   </div>
+   <br>
+   ${canEdit && displayWorkers.length > 0 ? `<button class="btn primary" onclick="saveAttendance('${selectedCentre}', '${selectedDate}')"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save Daily Attendance</button>` : ""}
+ </div>
+
+ <div class="panel" style="margin-top:16px">
+   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+     <h3 style="margin:0">Total Attendance Summary (${selectedCentre === 'All' ? 'All Centres' : selectedCentre})</h3>
+     <button class="btn primary" onclick="exportAttendanceExcel('${selectedCentre}')">
+       <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+       Download Excel Sheet
+     </button>
+   </div>
+   <div class="table-responsive">
+     <table>
+       <tr><th>Worker Name</th><th>Centre</th><th>Present Days</th><th>Half Days</th><th>Absent Days</th><th>Effective Attendance</th></tr>
+       ${displayWorkers.map(w => {
+         const logs = db.attendance.filter(a => a.workerId === w.id);
+         const pDays = logs.filter(a => a.status === "Present").length;
+         const hDays = logs.filter(a => a.status === "Half Day").length;
+         const aDays = logs.filter(a => a.status === "Absent").length;
+         const totalEff = pDays + (hDays * 0.5);
+
+         return `
+           <tr>
+             <td><b>${esc(w.name)}</b></td>
+             <td><span class="tag">${esc(w.centre)}</span></td>
+             <td><span style="color:#16714b;font-weight:bold">${pDays}</span></td>
+             <td><span style="color:#986500;font-weight:bold">${hDays}</span></td>
+             <td><span style="color:#b42318;font-weight:bold">${aDays}</span></td>
+             <td><b>${fmtNum(totalEff)} Days</b></td>
+           </tr>
+         `;
+       }).join("")}
+     </table>
+   </div>
+ </div>
+ `;
+}
+
+function exportAttendanceExcel(selectedCentre) {
+ const displayWorkers = selectedCentre === "All" ? db.workers : db.workers.filter(w => w.centre === selectedCentre);
+ let csv = "Worker Name,Centre,Date,Attendance Status\n";
+ 
+ displayWorkers.forEach(w => {
+   const logs = db.attendance.filter(a => a.workerId === w.id);
+   if(logs.length === 0) {
+     csv += `"${w.name}","${w.centre}","N/A","No Record"\n`;
+   } else {
+     logs.forEach(l => {
+       csv += `"${w.name}","${w.centre}","${l.date}","${l.status}"\n`;
+     });
+   }
+ });
+
+ downloadCSV(csv, `Attendance_Summary_${selectedCentre}_${new Date().toISOString().slice(0,10)}.csv`);
+}
+
+function saveAttendance(selectedCentre, date) {
+ const u = getCurrentUser();
+ const displayWorkers = selectedCentre === "All" 
+   ? db.workers 
+   : db.workers.filter(w => w.centre === selectedCentre);
+
+ displayWorkers.forEach(w => {
+   if (u.centre !== "All Centres" && u.centre !== w.centre) return;
+   const statusVal = document.getElementById(`status_${w.id}`)?.value || "Present";
+   const idx = db.attendance.findIndex(a => a.date === date && a.workerId === w.id);
+   if (idx >= 0) {
+     db.attendance[idx].status = statusVal;
+   } else {
+     db.attendance.push({ id: nextId("att"), date, centre: w.centre, workerId: w.id, workerName: w.name, status: statusVal });
+   }
+ });
+ saveDB("✓ Attendance saved successfully!");
+ attendance();
+}
+
+// 4. CENTRES
+function centres() {
+ const canEdit = canEditModule("centres");
+ const selectedCentre = val("centreFilter") || "All";
+
+ const filteredCentres = selectedCentre === "All" ? db.centres : db.centres.filter(c => c.name === selectedCentre);
+
+ document.getElementById("main").innerHTML = `
+ ${getLockNotice("centres")}
+ <div class="title">
+   <h2>Centres Management</h2>
+   <div style="display:flex;gap:10px;align-items:center">
+     <div>
+       <select id="centreFilter" onchange="centres()" style="padding:8px 12px;border:1px solid #ccd6d1;border-radius:6px;font-size:12px;background:#fff">
+         <option value="All" ${selectedCentre === "All" ? "selected" : ""}>Filter Centre: All Centres</option>
+         ${db.centres.map(c => `<option value="${esc(c.name)}" ${c.name === selectedCentre ? "selected" : ""}>${esc(c.name)}</option>`).join("")}
+       </select>
+     </div>
+     ${canEdit ? `<button class="btn primary" onclick="centreModal()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Centre</button>` : ""}
+   </div>
+ </div>
+ <div class="panel">
+   <div class="table-responsive">
+     <table>
+       <tr><th>Centre Name</th><th>State In-Charge</th><th>Opening Date</th><th>Looms</th><th>Women Count</th><th>Status</th><th>Actions</th></tr>
+       ${filteredCentres.map(c => {
+         const wCount = db.workers.filter(w => w.centre === c.name).length;
+         return `
+           <tr>
+             <td><b>${esc(c.name)}</b></td>
+             <td><b>${esc(c.state)}</b> -${esc(c.incharge)}</td>
+             <td>${esc(c.opening || '-')}</td>
+             <td><b>${c.looms || 0}</b></td>
+             <td><b>${wCount}</b></td>
+             <td>${badge(c.status)}</td>
+             <td>${getActionCellHTML('centres', c.name, `editCentreModal('${c.id}')`, `delRecord('centres','${c.id}')`)}</td>
+           </tr>
+         `;
+       }).join("")}
+     </table>
+   </div>
+ </div>`;
+}
+
+function centreModal(item = null) {
+ if (!canEditModule("centres")) return;
+ const x = item || { name: "", state: "", incharge: "", opening: new Date().toISOString().slice(0,10), looms: 5, status: "Active" };
+ modal(item ? "Edit Centre" : "Add Centre", `
+   <div class="form">
+     <div class="field"><label>Centre Name *</label><input id="fName" value="${esc(x.name)}"></div>
+     <div class="field"><label>State *</label><input id="fState" value="${esc(x.state)}"></div>
+     <div class="field"><label>State In-Charge Name *</label><input id="fIncharge" value="${esc(x.incharge)}"></div>
+     <div class="field"><label>Opening Date</label><input id="fOpening" type="date" value="${esc(x.opening || '')}"></div>
+     <div class="field"><label>Number of Looms</label><input id="fLooms" type="number" value="${x.looms || 0}"></div>
+     <div class="field"><label>Status</label>
+       <select id="fStatus">
+         <option value="Active" ${x.status==="Active"?"selected":""}>Active</option>
+         <option value="Inactive" ${x.status==="Inactive"?"selected":""}>Inactive</option>
+       </select>
+     </div>
+   </div>
+   <br><button class="btn primary" id="saveBtn">Save Centre</button>
+ `);
+ document.getElementById("saveBtn").onclick = () => {
+   const data = { 
+     name: val("fName"), 
+     state: val("fState"), 
+     incharge: val("fIncharge"), 
+     opening: val("fOpening"), 
+     looms: Number(val("fLooms") || 0), 
+     status: val("fStatus") 
+   };
+   if(!data.name) return alert("Centre Name is required.");
+   if (item) Object.assign(item, data);
+   else db.centres.push({ id: nextId("c"), ...data });
+   saveDB("✓ Centre details saved successfully!"); closeM(); centres();
+ };
+}
+function editCentreModal(id) { centreModal(db.centres.find(c => c.id === id)); }
+
+// 5. PRODUCTION
+function production() {
+ const canEdit = canEditModule("production");
+ document.getElementById("main").innerHTML = `
+ ${getLockNotice("production")}
+ <div class="title">
+   <h2>Production Log</h2>
+   ${canEdit ? `<button class="btn primary" onclick="prodModal()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Record Production</button>` : ""}
+ </div>
+ <div class="panel">
+   <div class="table-responsive">
+     <table>
+       <tr><th>Date</th><th>Centre</th><th>Product</th><th>Qty</th><th>Unit</th><th>Worker / Group</th><th>Status</th><th>Est Time</th><th>Actions</th></tr>
+       ${db.production.map(p => `
+         <tr>
+           <td>${esc(p.date)}</td>
+           <td><b>${esc(p.centre)}</b></td>
+           <td>${esc(p.product)}</td>
+           <td><b>${fmtNum(p.qty)}</b></td>
+           <td><b>${esc(p.unit)}</b></td>
+           <td>${esc(p.worker || '-')}</td>
+           <td>${badge(p.status || 'Completed')}</td>
+           <td>${esc(p.estTime || '-')}</td>
+           <td>${getActionCellHTML('production', p.centre, `editProdModal('${p.id}')`, `delRecord('production','${p.id}')`)}</td>
+         </tr>
+       `).join("")}
+     </table>
+   </div>
+ </div>`;
+}
+
+function prodModal(item = null) {
+ if (!canEditModule("production")) return;
+ const x = item || { date: new Date().toISOString().slice(0,10), centre: db.centres[0]?.name || "", product: "", qty: 1, unit: "Pieces", worker: "", hours: 8, status: "Completed", estTime: "0 Hours" };
+ 
+ const currentCentreWorkers = db.workers.filter(w => !x.centre || w.centre === x.centre);
+
+ modal(item ? "Edit Production Record" : "Record Production", `
+   <div class="form">
+     <div class="field"><label>Date</label><input id="fProdDate" type="date" value="${esc(x.date)}"></div>
+     <div class="field"><label>Centre Name *</label>
+       <select id="fProdCentre" onchange="updateProdWorkerDropdown()">
+         ${db.centres.map(c => `<option value="${esc(c.name)}" ${x.centre===c.name?"selected":""}>${esc(c.name)}</option>`).join("")}
+       </select>
+     </div>
+     <div class="field"><label>Product Name *</label><input id="fProduct" value="${esc(x.product)}"></div>
+     <div class="field"><label>Quantity *</label><input id="fQty" type="number" step="0.01" value="${x.qty}"></div>
+     <div class="field"><label>Quantity Unit *</label>
+       <select id="fUnit">
+         <option value="Pieces" ${x.unit==="Pieces"?"selected":""}>Pieces</option>
+         <option value="Meter" ${x.unit==="Meter"?"selected":""}>Meter</option>
+       </select>
+     </div>
+     <div class="field"><label>Worker / Trainee Select (Dropdown) *</label>
+       <select id="fWorkerSelect">
+         <option value="">-- Select Artisan / Trainee --</option>
+         ${currentCentreWorkers.map(w => `<option value="${esc(w.name)}" ${x.worker===w.name?"selected":""}>${esc(w.name)} (${esc(w.role)})</option>`).join("")}
+         <option value="__ADD_NEW__">+ Add New Worker / Trainee</option>
+       </select>
+     </div>
+     <div class="field"><label>Work Hours Spent</label><input id="fHours" type="number" step="0.01" value="${x.hours || 8}"></div>
+     <div class="field"><label>Production Status</label>
+       <select id="fProdStatus">
+         <option value="Completed" ${x.status==="Completed"?"selected":""}>Completed</option>
+         <option value="Pending" ${x.status==="Pending"?"selected":""}>Pending / In Progress</option>
+       </select>
+     </div>
+     <div class="field full"><label>Estimated Time Remaining (If Pending)</label><input id="fEstTime" placeholder="e.g. 2 Days, 5 Hours" value="${esc(x.estTime || '0 Hours')}"></div>
+   </div>
+   <br><button class="btn primary" id="saveBtn">Save Production Log</button>
+ `);
+
+ document.getElementById("fWorkerSelect").onchange = function() {
+   if (this.value === "__ADD_NEW__") {
+     closeM();
+     workerModal(null, val("fProdCentre"));
+   }
+ };
+
+ document.getElementById("saveBtn").onclick = () => {
+   const selectedW = val("fWorkerSelect");
+   if(selectedW === "__ADD_NEW__" || !selectedW) return alert("Kripya Worker / Trainee choose karein.");
+
+   const data = { 
+     date: val("fProdDate"), 
+     centre: val("fProdCentre"), 
+     product: val("fProduct"), 
+     qty: Number(val("fQty")), 
+     unit: val("fUnit"),
+     worker: selectedW,
+     hours: Number(val("fHours") || 8),
+     status: val("fProdStatus"),
+     estTime: val("fEstTime")
+   };
+   if(!data.product) return alert("Product name is required.");
+   if (item) Object.assign(item, data);
+   else db.production.push({ id: nextId("p"), ...data });
+   saveDB("✓ Production record saved successfully!"); closeM(); production();
+ };
+}
+
+function updateProdWorkerDropdown() {
+ const cName = val("fProdCentre");
+ const selectEl = document.getElementById("fWorkerSelect");
+ if(!selectEl) return;
+
+ const filtered = db.workers.filter(w => w.centre === cName);
+ selectEl.innerHTML = `<option value="">-- Select Artisan / Trainee --</option>` +
+   filtered.map(w => `<option value="${esc(w.name)}">${esc(w.name)} (${esc(w.role)})</option>`).join("") +
+   `<option value="__ADD_NEW__">+ Add New Worker / Trainee</option>`;
+}
+
+function editProdModal(id) { prodModal(db.production.find(p => p.id === id)); }
+
+// 6. WORKERS
+function workers() {
+ const canEdit = canEditModule("workers");
+ document.getElementById("main").innerHTML = `
+ ${getLockNotice("workers")}
+ <div class="title">
+   <h2>Workers & Artisans (Women & Trainees)</h2>
+   ${canEdit ? `<button class="btn primary" onclick="workerModal()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Worker</button>` : ""}
+ </div>
+ <div class="panel">
+   <div class="table-responsive">
+     <table>
+       <tr><th>Name</th><th>Centre</th><th>Role</th><th>Phone</th><th>Actions</th></tr>
+       ${db.workers.map(w => `
+         <tr>
+           <td><b>${esc(w.name)}</b></td>
+           <td>${esc(w.centre)}</td>
+           <td>${esc(w.role)}</td>
+           <td>${esc(w.phone || '-')}</td>
+           <td>${getActionCellHTML('workers', w.centre, `editWorkerModal('${w.id}')`, `delRecord('workers','${w.id}')`)}</td>
+         </tr>
+       `).join("")}
+     </table>
+   </div>
+ </div>`;
+}
+
+function workerModal(item = null, defaultCentre = null) {
+ if (!canEditModule("workers")) return;
+ const x = item || { name: "", centre: defaultCentre || db.centres[0]?.name || "", role: "Weaver", phone: "" };
+ modal(item ? "Edit Worker" : "Add Worker", `
+   <div class="form">
+     <div class="field"><label>Full Name *</label><input id="fName" value="${esc(x.name)}"></div>
+     <div class="field"><label>Centre *</label>
+       <select id="fCentre">
+         ${db.centres.map(c => `<option value="${esc(c.name)}" ${x.centre===c.name?"selected":""}>${esc(c.name)}</option>`).join("")}
+       </select>
+     </div>
+     <div class="field"><label>Role / Skill</label>
+       <select id="fRole">
+         <option value="Senior Weaver" ${x.role==="Senior Weaver"?"selected":""}>Senior Weaver</option>
+         <option value="Weaver" ${x.role==="Weaver"?"selected":""}>Weaver</option>
+         <option value="Trainee" ${x.role==="Trainee"?"selected":""}>Trainee</option>
+         <option value="Helper" ${x.role==="Helper"?"selected":""}>Helper</option>
+       </select>
+     </div>
+     <div class="field"><label>Phone Number</label><input id="fPhone" value="${esc(x.phone)}"></div>
+   </div>
+   <br><button class="btn primary" id="saveWorkerBtn"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save Worker</button>
+ `);
+
+ document.getElementById("saveWorkerBtn").onclick = () => {
+   const data = { name: val("fName"), centre: val("fCentre"), role: val("fRole"), phone: val("fPhone"), status: "Active" };
+   if (!data.name) return alert("Worker Name is required.");
+   if (item) Object.assign(item, data);
+   else db.workers.push({ id: nextId("w"), ...data });
+   saveDB("✓ Worker profile saved successfully!"); closeM();
+   if (current === "attendance") attendance(); 
+   else if (current === "production") prodModal();
+   else workers();
+ };
+}
+function editWorkerModal(id) { workerModal(db.workers.find(w => w.id === id)); }
+
+// 7. YARN & STOCK
+function yarn() {
+ const canEdit = canEditModule("yarn");
+ document.getElementById("main").innerHTML = `
+ ${getLockNotice("yarn")}
+ <div class="title">
+   <h2>Yarn & Stock Management</h2>
+   ${canEdit ? `<button class="btn primary" onclick="yarnModal()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Allocate Yarn</button>` : ""}
+ </div>
+ <div class="panel">
+   <div class="table-responsive">
+     <table>
+       <tr><th>Centre Name</th><th>Item Specification</th><th>Allocated Qty</th><th>Allocated Date</th><th>Received Qty</th><th>Received Date</th><th>Pending Qty</th><th>Unit</th><th>Actions</th></tr>
+       ${db.yarn.map(y => `
+         <tr>
+           <td><b>${esc(y.centre)}</b></td>
+           <td>${esc(y.item)}</td>
+           <td><b>${fmtNum(y.allocated)}</b></td>
+           <td>${esc(y.allocDate || '-')}</td>
+           <td><span style="color:#16714b;font-weight:bold">${fmtNum(y.received || 0)}</span></td>
+           <td>${esc(y.recDate || '-')}</td>
+           <td><b style="color:#b42318">${fmtNum(y.pending)}</b></td>
+           <td><span class="tag">${esc(y.unit || 'kg')}</span></td>
+           <td>${getActionCellHTML('yarn', y.centre, `editYarnModal('${y.id}')`, `delRecord('yarn','${y.id}')`)}</td>
+         </tr>
+       `).join("")}
+     </table>
+   </div>
+ </div>`;
+}
+
+function yarnModal(item = null) {
+ if (!canEditModule("yarn")) return;
+ const today = new Date().toISOString().slice(0,10);
+ const x = item || { centre: db.centres[0]?.name || "", item: "", allocated: 10, received: 0, pending: 10, unit: "kg", allocDate: today, recDate: today };
+ modal(item ? "Edit Yarn Allocation & Receiving" : "Allocate Yarn", `
+   <div class="form">
+     <div class="field"><label>Centre Name *</label>
+       <select id="fYarnCentre">
+         ${db.centres.map(c => `<option value="${esc(c.name)}" ${x.centre===c.name?"selected":""}>${esc(c.name)}</option>`).join("")}
+       </select>
+     </div>
+     <div class="field"><label>Yarn Item Specs *</label><input id="fItem" value="${esc(x.item)}"></div>
+     <div class="field"><label>Allocated Quantity</label><input id="fAlloc" type="number" step="0.01" value="${x.allocated}"></div>
+     <div class="field"><label>Allocation Date</label><input id="fAllocDate" type="date" value="${esc(x.allocDate || today)}"></div>
+     <div class="field"><label>Received Quantity</label><input id="fRec" type="number" step="0.01" value="${x.received || 0}"></div>
+     <div class="field"><label>Received Date</label><input id="fRecDate" type="date" value="${esc(x.recDate || today)}"></div>
+     <div class="field"><label>Quantity Unit</label>
+       <select id="fYarnUnit">
+         <option value="kg" ${x.unit==="kg"?"selected":""}>kg (Kilograms)</option>
+         <option value="Bales" ${x.unit==="Bales"?"selected":""}>Bales</option>
+         <option value="Bundles" ${x.unit==="Bundles"?"selected":""}>Bundles</option>
+       </select>
+     </div>
+   </div>
+   <br><button class="btn primary" id="saveYarnBtn"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save Yarn Details</button>
+ `);
+
+ document.getElementById("saveYarnBtn").onclick = () => {
+   const alloc = Number(val("fAlloc") || 0);
+   const rec = Number(val("fRec") || 0);
+   const pend = alloc - rec;
+
+   const data = { 
+     centre: val("fYarnCentre"), 
+     item: val("fItem"), 
+     allocated: alloc, 
+     received: rec,
+     pending: pend >= 0 ? pend : 0, 
+     unit: val("fYarnUnit"), 
+     allocDate: val("fAllocDate"),
+     recDate: val("fRecDate"),
+     status: pend <= 0 ? "Completed" : "Pending" 
+   };
+   if (!data.item) return alert("Yarn item name required.");
+   if (item) Object.assign(item, data);
+   else db.yarn.push({ id: nextId("y"), ...data });
+   saveDB("✓ Yarn inventory details saved!"); closeM(); yarn();
+ };
+}
+function editYarnModal(id) { yarnModal(db.yarn.find(y => y.id === id)); }
+
+// 8. PAYMENTS & WAGES
+function payments() {
+ const canEdit = canEditModule("payments");
+ document.getElementById("main").innerHTML = `
+ ${getLockNotice("payments")}
+ <div class="title">
+   <h2>Payments & Wage Management</h2>
+   ${canEdit ? `<button class="btn primary" onclick="paymentModal()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Payment Record</button>` : ""}
+ </div>
+ <div class="panel">
+   <div class="table-responsive">
+     <table>
+       <tr><th>Date</th><th>Centre</th><th>Worker Name</th><th>Work Details</th><th>Qty</th><th>Rate (₹)</th><th>Total Amount (₹)</th><th>Status</th><th>Actions</th></tr>
+       ${db.payments.map(p => `
+         <tr>
+           <td>${esc(p.date)}</td>
+           <td><b>${esc(p.centre || '-')}</b></td>
+           <td><b>${esc(p.worker)}</b></td>
+           <td>${esc(p.work || '-')}</td>
+           <td>${fmtNum(p.qty || 1)}</td>
+           <td>₹${fmtNum(p.rate || p.amount)}</td>
+           <td><b style="color:#174c3d">₹${fmtNum(p.amount)}</b></td>
+           <td>${badge(p.status || 'Paid')}</td>
+           <td>${getActionCellHTML('payments', p.centre, `editPaymentModal('${p.id}')`, `delRecord('payments','${p.id}')`)}</td>
+         </tr>
+       `).join("")}
+     </table>
+   </div>
+ </div>`;
+}
+
+function paymentModal(item = null) {
+ if (!canEditModule("payments")) return;
+ const x = item || { 
+   date: new Date().toISOString().slice(0,10), 
+   centre: db.centres[0]?.name || "", 
+   worker: "", 
+   work: "", 
+   qty: 1, 
+   rate: 100, 
+   amount: 100, 
+   status: "Paid" 
+ };
+
+ modal(item ? "Edit Payment & Wage Record" : "Add Payment Record", `
+   <div class="form">
+     <div class="field"><label>Date *</label><input id="fPayDate" type="date" value="${esc(x.date)}"></div>
+     <div class="field"><label>Centre Name (Dropdown) *</label>
+       <select id="fPayCentre">
+         ${db.centres.map(c => `<option value="${esc(c.name)}" ${x.centre===c.name?"selected":""}>${esc(c.name)}</option>`).join("")}
+       </select>
+     </div>
+     <div class="field"><label>Worker Name *</label><input id="fPayWorker" value="${esc(x.worker)}"></div>
+     <div class="field"><label>Work Specification</label><input id="fPayWork" value="${esc(x.work)}"></div>
+     <div class="field"><label>Quantity</label><input id="fPayQty" type="number" step="0.01" value="${x.qty || 1}" oninput="calcTotalAmount()"></div>
+     <div class="field"><label>Rate per Piece/Meter (₹)</label><input id="fPayRate" type="number" step="0.01" value="${x.rate || x.amount}" oninput="calcTotalAmount()"></div>
+     <div class="field"><label>Total Amount (₹) [Auto Calculated]</label><input id="fPayAmount" type="number" step="0.01" value="${x.amount}" readonly style="background:#f0f5f2;font-weight:bold"></div>
+     <div class="field"><label>Payment Status *</label>
+       <select id="fPayStatus">
+         <option value="Paid" ${x.status==="Paid"?"selected":""}>Paid</option>
+         <option value="Pending" ${x.status==="Pending"?"selected":""}>Pending</option>
+       </select>
+     </div>
+   </div>
+   <br><button class="btn primary" id="savePayBtn"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save Payment Details</button>
+ `);
+
+ document.getElementById("savePayBtn").onclick = () => {
+   const data = { 
+     date: val("fPayDate"), 
+     centre: val("fPayCentre"), 
+     worker: val("fPayWorker"), 
+     work: val("fPayWork"), 
+     qty: Number(val("fPayQty")||1),
+     rate: Number(val("fPayRate")||0),
+     amount: Number(val("fPayAmount")||0), 
+     status: val("fPayStatus") 
+   };
+   if (!data.worker || !data.amount) return alert("Worker name and Amount are required.");
+   if (item) Object.assign(item, data);
+   else db.payments.push({ id: nextId("pay"), ...data });
+   saveDB("✓ Payment record saved successfully!"); closeM(); payments();
+ };
+}
+
+function calcTotalAmount() {
+ const q = Number(val("fPayQty") || 0);
+ const r = Number(val("fPayRate") || 0);
+ const totEl = document.getElementById("fPayAmount");
+ if (totEl) totEl.value = (q * r).toFixed(2);
+}
+
+function editPaymentModal(id) { paymentModal(db.payments.find(p => p.id === id)); }
+
+// 9. TRAINING
+function training() {
+ const canEdit = canEditModule("training");
+ document.getElementById("main").innerHTML = `
+ ${getLockNotice("training")}
+ <div class="title">
+   <h2>Training Programs & Skill Logs</h2>
+   ${canEdit ? `<button class="btn primary" onclick="trainingModal()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Log Training Session</button>` : ""}
+ </div>
+ <div class="panel">
+   <div class="table-responsive">
+     <table>
+       <tr><th>Date</th><th>Centre</th><th>Trainer Expert</th><th>Topic</th><th>Participants</th><th>Hours Spent</th><th>Actions</th></tr>
+       ${db.training.map(t => `
+         <tr>
+           <td>${esc(t.date)}</td>
+           <td><b>${esc(t.centre)}</b></td>
+           <td>${esc(t.trainer)}</td>
+           <td><b>${esc(t.topic)}</b></td>
+           <td>${t.participants || 0}</td>
+           <td>${t.hours || 0} Hrs</td>
+           <td>${getActionCellHTML('training', t.centre, `editTrainingModal('${t.id}')`, `delRecord('training','${t.id}')`)}</td>
+         </tr>
+       `).join("")}
+     </table>
+   </div>
+ </div>`;
+}
+
+function trainingModal(item = null) {
+ if (!canEditModule("training")) return;
+ const x = item || { date: new Date().toISOString().slice(0,10), centre: db.centres[0]?.name || "", trainer: "", topic: "", participants: 10, hours: 4 };
+ modal(item ? "Edit Training Program" : "Log Training Session", `
+   <div class="form">
+     <div class="field"><label>Date *</label><input id="fTrDate" type="date" value="${esc(x.date)}"></div>
+     <div class="field"><label>Centre Name *</label>
+       <select id="fTrCentre">
+         ${db.centres.map(c => `<option value="${esc(c.name)}" ${x.centre===c.name?"selected":""}>${esc(c.name)}</option>`).join("")}
+       </select>
+     </div>
+     <div class="field"><label>Trainer Expert Name *</label><input id="fTrTrainer" value="${esc(x.trainer)}"></div>
+     <div class="field"><label>Training Topic *</label><input id="fTrTopic" value="${esc(x.topic)}"></div>
+     <div class="field"><label>Number of Participants</label><input id="fTrPart" type="number" value="${x.participants || 0}"></div>
+     <div class="field"><label>Hours Spent</label><input id="fTrHours" type="number" step="0.5" value="${x.hours || 0}"></div>
+   </div>
+   <br><button class="btn primary" id="saveTrBtn"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save Training Log</button>
+ `);
+
+ document.getElementById("saveTrBtn").onclick = () => {
+   const data = { 
+     date: val("fTrDate"), 
+     centre: val("fTrCentre"), 
+     trainer: val("fTrTrainer"), 
+     topic: val("fTrTopic"), 
+     participants: Number(val("fTrPart")||0), 
+     hours: Number(val("fTrHours")||0) 
+   };
+   if (!data.topic || !data.trainer) return alert("Topic and Trainer details are required.");
+   if (item) Object.assign(item, data);
+   else db.training.push({ id: nextId("tr"), ...data });
+   saveDB("✓ Training session saved!"); closeM(); training();
+ };
+}
+function editTrainingModal(id) { trainingModal(db.training.find(t => t.id === id)); }
+
+// 10. TASKS & FOLLOWUPS
+function tasks() {
+ const canEdit = canEditModule("tasks");
+ document.getElementById("main").innerHTML = `
+ ${getLockNotice("tasks")}
+ <div class="title">
+   <h2>Tasks & Operational Followups</h2>
+   ${canEdit ? `<button class="btn primary" onclick="taskModal()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Create Task</button>` : ""}
+ </div>
+ <div class="panel">
+   <div class="table-responsive">
+     <table>
+       <tr><th>Task Description</th><th>Centre Mapping</th><th>Due Date</th><th>Priority</th><th>Assigned To</th><th>Status</th><th>Actions</th></tr>
+       ${db.tasks.map(t => `
+         <tr>
+           <td><b>${esc(t.task)}</b></td>
+           <td><span class="tag">${esc(t.centre)}</span></td>
+           <td>${esc(t.due)}</td>
+           <td>${badge(t.priority)}</td>
+           <td>${esc(t.owner || 'Project Team')}</td>
+           <td>${badge(t.status)}</td>
+           <td>${getActionCellHTML('tasks', t.centre, `editTaskModal('${t.id}')`, `delRecord('tasks','${t.id}')`)}</td>
+         </tr>
+       `).join("")}
+     </table>
+   </div>
+ </div>`;
+}
+
+function taskModal(item = null) {
+ if (!canEditModule("tasks")) return;
+ const x = item || { task: "", centre: "All Centres", due: new Date().toISOString().slice(0,10), priority: "Medium", status: "Open", owner: "Project Team" };
+ modal(item ? "Edit Task Details" : "Create Action Task", `
+   <div class="form">
+     <div class="field full"><label>Task Description *</label><input id="fTaskDesc" value="${esc(x.task)}"></div>
+     <div class="field"><label>Centre Assignment</label>
+       <select id="fTaskCentre">
+         <option value="All Centres" ${x.centre==="All Centres"?"selected":""}>All Centres</option>
+         ${db.centres.map(c => `<option value="${esc(c.name)}" ${x.centre===c.name?"selected":""}>${esc(c.name)}</option>`).join("")}
+       </select>
+     </div>
+     <div class="field"><label>Due Date</label><input id="fTaskDue" type="date" value="${esc(x.due)}"></div>
+     <div class="field"><label>Priority</label>
+       <select id="fTaskPrio">
+         <option value="High" ${x.priority==="High"?"selected":""}>High</option>
+         <option value="Medium" ${x.priority==="Medium"?"selected":""}>Medium</option>
+         <option value="Low" ${x.priority==="Low"?"selected":""}>Low</option>
+       </select>
+     </div>
+     <div class="field"><label>Status</label>
+       <select id="fTaskStatus">
+         <option value="Open" ${x.status==="Open"?"selected":""}>Open</option>
+         <option value="In Progress" ${x.status==="In Progress"?"selected":""}>In Progress</option>
+         <option value="Completed" ${x.status==="Completed"?"selected":""}>Completed</option>
+       </select>
+     </div>
+     <div class="field full"><label>Assigned Owner</label><input id="fTaskOwner" value="${esc(x.owner || 'Project Team')}"></div>
+   </div>
+   <br><button class="btn primary" id="saveTaskBtn"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save Task</button>
+ `);
+
+ document.getElementById("saveTaskBtn").onclick = () => {
+   const data = { 
+     task: val("fTaskDesc"), 
+     centre: val("fTaskCentre"), 
+     due: val("fTaskDue"), 
+     priority: val("fTaskPrio"), 
+     status: val("fTaskStatus"), 
+     owner: val("fTaskOwner") 
+   };
+   if (!data.task) return alert("Task description required.");
+   if (item) Object.assign(item, data);
+   else db.tasks.push({ id: nextId("t"), ...data });
+   saveDB("✓ Task details saved successfully!"); closeM(); tasks();
+ };
+}
+function editTaskModal(id) { taskModal(db.tasks.find(t => t.id === id)); }
+
+// 11. REPORTS
+function reports() {
+ document.getElementById("main").innerHTML = `
+ <div class="title">
+   <div>
+     <h2 style="margin:0;color:#174c3d;font-size:22px">Comprehensive Executive Management Report</h2>
+     <span class="muted">Detailed System Audit Logs & Centre Analytics</span>
+   </div>
+   <div style="display:flex;gap:10px;align-items:center">
+     <button class="btn primary" onclick="exportFullSummaryCSV()">
+       <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Excel (CSV)
+     </button>
+     <button class="btn primary" style="background:#b42318;border-color:#b42318" onclick="window.print()">
+       <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Download PDF / Print
+     </button>
+   </div>
+ </div>
+
+ <div class="panel" style="margin-bottom:18px">
+   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+     <h3 style="margin:0;color:#174c3d">1. Production Output Report</h3>
+     <div style="display:flex;gap:6px">
+       <button class="btn sm primary" onclick="exportProdCSV()">Excel</button>
+       <button class="btn sm" onclick="window.print()">PDF/Print</button>
+     </div>
+   </div>
+   <div class="table-responsive">
+     <table>
+       <tr><th>Date</th><th>Centre</th><th>Product</th><th>Qty</th><th>Unit</th><th>Worker / Group</th><th>Status</th></tr>
+       ${db.production.map(p => `
+         <tr>
+           <td>${esc(p.date)}</td>
+           <td><b>${esc(p.centre)}</b></td>
+           <td>${esc(p.product)}</td>
+           <td><b>${fmtNum(p.qty)}</b></td>
+           <td>${esc(p.unit)}</td>
+           <td>${esc(p.worker || '-')}</td>
+           <td>${badge(p.status || 'Completed')}</td>
+         </tr>
+       `).join("")}
+     </table>
+   </div>
+ </div>
+
+ <div class="panel" style="margin-bottom:18px">
+   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+     <h3 style="margin:0;color:#174c3d">2. Yarn & Stock Audit Statement</h3>
+     <div style="display:flex;gap:6px">
+       <button class="btn sm primary" onclick="exportYarnCSV()">Excel</button>
+       <button class="btn sm" onclick="window.print()">PDF/Print</button>
+     </div>
+   </div>
+   <div class="table-responsive">
+     <table>
+       <tr><th>Centre</th><th>Item Specs</th><th>Allocated</th><th>Allocated Date</th><th>Received</th><th>Received Date</th><th>Pending</th><th>Unit</th></tr>
+       ${db.yarn.map(y => `
+         <tr>
+           <td><b>${esc(y.centre)}</b></td>
+           <td>${esc(y.item)}</td>
+           <td>${fmtNum(y.allocated)}</td>
+           <td>${esc(y.allocDate || '-')}</td>
+           <td><b style="color:#16714b">${fmtNum(y.received || 0)}</b></td>
+           <td>${esc(y.recDate || '-')}</td>
+           <td><b style="color:#b42318">${fmtNum(y.pending)}</b></td>
+           <td>${esc(y.unit || 'kg')}</td>
+         </tr>
+       `).join("")}
+     </table>
+   </div>
+ </div>
+
+ <div class="panel" style="margin-bottom:18px">
+   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+     <h3 style="margin:0;color:#174c3d">3. Disbursed Wages & Payout Log</h3>
+     <div style="display:flex;gap:6px">
+       <button class="btn sm primary" onclick="exportPaymentCSV()">Excel</button>
+       <button class="btn sm" onclick="window.print()">PDF/Print</button>
+     </div>
+   </div>
+   <div class="table-responsive">
+     <table>
+       <tr><th>Date</th><th>Centre</th><th>Worker Name</th><th>Work Specification</th><th>Qty</th><th>Rate (₹)</th><th>Total Amount (₹)</th><th>Status</th></tr>
+       ${db.payments.map(p => `
+         <tr>
+           <td>${esc(p.date)}</td>
+           <td><b>${esc(p.centre || '-')}</b></td>
+           <td><b>${esc(p.worker)}</b></td>
+           <td>${esc(p.work || '-')}</td>
+           <td>${fmtNum(p.qty || 1)}</td>
+           <td>₹${fmtNum(p.rate || p.amount)}</td>
+           <td><b style="color:#174c3d">₹${fmtNum(p.amount)}</b></td>
+           <td>${badge(p.status || 'Paid')}</td>
+         </tr>
+       `).join("")}
+     </table>
+   </div>
+ </div>
+
+ <div class="panel" style="margin-bottom:18px">
+   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+     <h3 style="margin:0;color:#174c3d">4. Training & Skill Development Programs</h3>
+     <div style="display:flex;gap:6px">
+       <button class="btn sm primary" onclick="exportTrainingCSV()">Excel</button>
+       <button class="btn sm" onclick="window.print()">PDF/Print</button>
+     </div>
+   </div>
+   <div class="table-responsive">
+     <table>
+       <tr><th>Date</th><th>Centre</th><th>Trainer Expert</th><th>Topic</th><th>Participants</th><th>Hours Spent</th></tr>
+       ${db.training.map(t => `
+         <tr>
+           <td>${esc(t.date)}</td>
+           <td><b>${esc(t.centre)}</b></td>
+           <td>${esc(t.trainer)}</td>
+           <td><b>${esc(t.topic)}</b></td>
+           <td>${t.participants || 0}</td>
+           <td>${t.hours || 0} Hrs</td>
+         </tr>
+       `).join("")}
+     </table>
+   </div>
+ </div>
+
+ <div class="panel">
+   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+     <h3 style="margin:0;color:#174c3d">5. Action Tasks & Followups Summary</h3>
+     <div style="display:flex;gap:6px">
+       <button class="btn sm primary" onclick="exportTasksCSV()">Excel</button>
+       <button class="btn sm" onclick="window.print()">PDF/Print</button>
+     </div>
+   </div>
+   <div class="table-responsive">
+     <table>
+       <tr><th>Task Description</th><th>Centre Mapping</th><th>Due Date</th><th>Priority</th><th>Owner</th><th>Status</th></tr>
+       ${db.tasks.map(t => `
+         <tr>
+           <td><b>${esc(t.task)}</b></td>
+           <td>${esc(t.centre)}</td>
+           <td>${esc(t.due)}</td>
+           <td>${badge(t.priority)}</td>
+           <td>${esc(t.owner || 'Project Team')}</td>
+           <td>${badge(t.status)}</td>
+         </tr>
+       `).join("")}
+     </table>
+   </div>
+ </div>
+ `;
+}
+
+function exportProdCSV() {
+ let csv = "Date,Centre,Product,Quantity,Unit,Worker/Group,Status\n";
+ db.production.forEach(p => {
+   csv += `"${p.date}","${p.centre}","${p.product}","${p.qty}","${p.unit}","${p.worker||''}","${p.status||'Completed'}"\n`;
+ });
+ downloadCSV(csv, `Production_Report_${new Date().toISOString().slice(0,10)}.csv`);
+}
+
+function exportYarnCSV() {
+ let csv = "Centre,Item Specification,Allocated Qty,Allocation Date,Received Qty,Received Date,Pending Qty,Unit\n";
+ db.yarn.forEach(y => {
+   csv += `"${y.centre}","${y.item}","${y.allocated}","${y.allocDate||''}","${y.received||0}","${y.recDate||''}","${y.pending}","${y.unit||'kg'}"\n`;
+ });
+ downloadCSV(csv, `Yarn_Stock_Report_${new Date().toISOString().slice(0,10)}.csv`);
+}
+
+function exportPaymentCSV() {
+ let csv = "Date,Centre,Worker Name,Work Details,Quantity,Rate,Total Amount,Status\n";
+ db.payments.forEach(p => {
+   csv += `"${p.date}","${p.centre||''}","${p.worker}","${p.work||''}","${p.qty||1}","${p.rate||p.amount}","${p.amount}","${p.status||'Paid'}"\n`;
+ });
+ downloadCSV(csv, `Wage_Disbursement_Report_${new Date().toISOString().slice(0,10)}.csv`);
+}
+
+function exportTrainingCSV() {
+ let csv = "Date,Centre,Trainer,Topic,Participants,Hours\n";
+ db.training.forEach(t => {
+   csv += `"${t.date}","${t.centre}","${t.trainer}","${t.topic}","${t.participants||0}","${t.hours||0}"\n`;
+ });
+ downloadCSV(csv, `Training_Report_${new Date().toISOString().slice(0,10)}.csv`);
+}
+
+function exportTasksCSV() {
+ let csv = "Task Description,Centre Mapping,Due Date,Priority,Owner,Status\n";
+ db.tasks.forEach(t => {
+   csv += `"${t.task}","${t.centre}","${t.due}","${t.priority}","${t.owner||'Project Team'}","${t.status}"\n`;
+ });
+ downloadCSV(csv, `Action_Tasks_Report_${new Date().toISOString().slice(0,10)}.csv`);
+}
+
+function exportFullSummaryCSV() {
+ let csv = "=== 1. PRODUCTION OUTPUT ===\nDate,Centre,Product,Quantity,Unit,Worker/Group,Status\n";
+ db.production.forEach(p => {
+   csv += `"${p.date}","${p.centre}","${p.product}","${p.qty}","${p.unit}","${p.worker||''}","${p.status||'Completed'}"\n`;
+ });
+ csv += "\n=== 2. YARN STOCK ===\nCentre,Item Specification,Allocated Qty,Received Qty,Pending Qty,Unit\n";
+ db.yarn.forEach(y => {
+   csv += `"${y.centre}","${y.item}","${y.allocated}","${y.received||0}","${y.pending}","${y.unit||'kg'}"\n`;
+ });
+ csv += "\n=== 3. WAGE DISBURSEMENTS ===\nDate,Centre,Worker Name,Qty,Rate,Total Amount,Status\n";
+ db.payments.forEach(p => {
+   csv += `"${p.date}","${p.centre||''}","${p.worker}","${p.qty||1}","${p.rate||p.amount}","${p.amount}","${p.status||'Paid'}"\n`;
+ });
+ downloadCSV(csv, `Comprehensive_Ekal_Report_${new Date().toISOString().slice(0,10)}.csv`);
+}
+
+// 12. AI ASSISTANT
+function ai() {
+ document.getElementById("main").innerHTML = `
+ <div class="title">
+   <h2>Ekal Smart AI Operations Assistant</h2>
+ </div>
+ <div class="panel" style="max-width:800px">
+   <p class="muted">Ask natural questions about your production output, yarn stock status, weaver attendance, or payment disbursements.</p>
+   <div style="display:flex;gap:10px;margin-bottom:16px">
+     <input id="aiQuery" placeholder="e.g. Which centre has highest production? Or show pending yarn stock." style="flex:1;padding:10px;border:1px solid #ccd6d1;border-radius:6px;font-size:13px" onkeypress="if(event.key==='Enter') runAI()">
+     <button class="btn primary" onclick="runAI()"><svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg> Ask AI</button>
+   </div>
+   <div id="aiResponse" style="padding:16px;background:#f6f9f7;border-radius:8px;border:1px solid #dfe6e2;min-height:100px;font-size:13.5px;line-height:1.6;color:#17221e">
+     🤖 Hello! Ask any question regarding Ekal Handloom system operations...
+   </div>
+ </div>`;
+}
+
+function runAI() {
+ const q = val("aiQuery").toLowerCase();
+ const resEl = document.getElementById("aiResponse");
+ if (!q) return;
+
+ resEl.innerHTML = "⌛ Analyzing system database...";
+
+ setTimeout(() => {
+   if (q.includes("production") || q.includes("output") || q.includes("highest")) {
+     const totalPcs = db.production.filter(x => x.unit === "Pieces").reduce((s, x) => s + Number(x.qty || 0), 0);
+     const totalMtr = db.production.filter(x => x.unit === "Meter").reduce((s, x) => s + Number(x.qty || 0), 0);
+     resEl.innerHTML = `<b>📊 Production Analysis Insight:</b><br>
+     • Total Pieces Produced: <b>${totalPcs.toFixed(2)} pcs</b><br>
+     • Total Meter Output: <b>${totalMtr.toFixed(2)} meters</b><br>
+     • Registered Production Logs: <b>${db.production.length} total batches</b>.`;
+   } else if (q.includes("yarn") || q.includes("stock") || q.includes("pending")) {
+     const pendingYarn = db.yarn.reduce((s, x) => s + Number(x.pending || 0), 0);
+     resEl.innerHTML = `<b>🧵 Yarn Stock Inventory Status:</b><br>
+     • Total Pending Yarn to Receive: <b>${pendingYarn.toFixed(2)} kg</b><br>
+     • Total Allocation Logs: <b>${db.yarn.length} batches</b>.`;
+   } else if (q.includes("payment") || q.includes("wage") || q.includes("payout")) {
+     const totalPaid = db.payments.filter(p => p.status === 'Paid').reduce((s, x) => s + Number(x.amount || 0), 0);
+     resEl.innerHTML = `<b>💰 Wage Disbursement Overview:</b><br>
+     • Total Wages Disbursed: <b>₹${totalPaid.toFixed(2)}</b><br>
+     • Payment Transactions Logged: <b>${db.payments.length}</b>.`;
+   } else {
+     resEl.innerHTML = `<b>ℹ️ System Context Summary:</b><br>
+     • Total Active Centres: <b>${db.centres.length}</b><br>
+     • Total Artisans Registered: <b>${db.workers.length}</b><br>
+     • Open Action Items: <b>${db.tasks.filter(t => t.status !== 'Completed').length}</b>.`;
+   }
+ }, 400);
+}
+
+// 13. USERS & ROLES
+function users() {
+ const canView = getCurrentUser()?.role === "ADMINISTRATOR";
+ if (!canView) {
+   document.getElementById("main").innerHTML = `
+   <div class="locked-banner" style="margin-top:20px;padding:20px">
+     <svg style="width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> 
+     <div>
+       <b style="font-size:16px">Access Denied (Restricted Area)</b><br>
+       User Access Management section strictly <b>Administrator</b> ke alawa kisi bhi role ke liye accessible nahi hai.
+     </div>
+   </div>`;
+   return;
+ }
+
+ document.getElementById("main").innerHTML = `
+ <div class="title">
+   <h2>User Access & Portal Roles</h2>
+   <button class="btn primary" onclick="userModal()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Portal User</button>
+ </div>
+ <div class="panel">
+   <div class="table-responsive">
+     <table>
+       <tr><th>User Name</th><th>Email ID</th><th>Assigned Role</th><th>Centre Jurisdiction</th><th>Access Level</th><th>Actions</th></tr>
+       ${db.users.map(u => `
+         <tr>
+           <td><b>${esc(u.name)}</b></td>
+           <td>${esc(u.email)}</td>
+           <td><span class="tag tag-admin">${esc(u.role)}</span></td>
+           <td>${esc(u.centre)}</td>
+           <td><b>${esc(u.accessLevel)}</b></td>
+           <td>
+             <button class="btn sm edit-btn" onclick="editUserModal('${u.id}')"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>
+             <button class="btn sm danger" onclick="delRecord('users','${u.id}')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Delete</button>
+           </td>
+         </tr>
+       `).join("")}
+     </table>
+   </div>
+ </div>`;
+}
+
+function userModal(item = null) {
+ if (getCurrentUser()?.role !== "ADMINISTRATOR") return;
+ const x = item || { name: "", email: "", pass: "123456", role: "OFFICE_ADMIN", centre: "All Centres", accessLevel: "EDIT", phone: "" };
+ 
+ const standardRoles = [
+   { val: "ADMINISTRATOR", label: "Administrator" },
+   { val: "EXECUTIVE_DIRECTOR", label: "Executive Director" },
+   { val: "EXECUTIVE_ASSISTANT", label: "Executive Assistant" },
+   { val: "OFFICE_ADMIN", label: "Office Admin" },
+   { val: "CENTRE_INCHARGE", label: "Centre Incharge" },
+   { val: "PROJECT_HEAD_INTERNAL", label: "Project Head Internal" },
+   { val: "PROJECT_HEAD_EXTERNAL", label: "Project Head External" },
+   { val: "PROJECT_COORDINATOR", label: "Project Coordinator" },
+   { val: "HR", label: "HR (View Only)" }
+ ];
+
+ const customRolesList = (db.customRoles || []).filter(r => !standardRoles.some(s => s.val === r));
+
+ modal(item ? "Edit Portal User" : "Add Portal User", `
+   <div class="form">
+     <div class="field"><label>Full Name *</label><input id="fUName" value="${esc(x.name)}"></div>
+     <div class="field"><label>Email Address *</label><input id="fUEmail" value="${esc(x.email)}"></div>
+     <div class="field"><label>Login Password *</label><input id="fUPass" value="${esc(x.pass || '123456')}"></div>
+     
+     <div class="field"><label>Role Title</label>
+       <select id="fURole" onchange="toggleCustomRoleInput()">
+         ${standardRoles.map(r => `<option value="${r.val}" ${x.role===r.val?"selected":""}>${r.label}</option>`).join("")}
+         ${customRolesList.map(r => `<option value="${r}" ${x.role===r?"selected":""}>${r}</option>`).join("")}
+         <option value="__NEW_ROLE__">+ Add New Custom Role...</option>
+       </select>
+     </div>
+
+     <div class="field full" id="customRoleBox" style="display:none">
+       <label style="color:#174c3d">Enter New Custom Role Title *</label>
+       <input id="fCustomRoleName" placeholder="e.g. REGIONAL_MANAGER">
+     </div>
+
+     <div class="field"><label>Centre Jurisdiction</label>
+       <select id="fUCentre">
+         <option value="All Centres" ${x.centre==="All Centres"?"selected":""}>All Centres</option>
+         ${db.centres.map(c => `<option value="${esc(c.name)}" ${x.centre===c.name?"selected":""}>${esc(c.name)}</option>`).join("")}
+       </select>
+     </div>
+     <div class="field"><label>Access Level</label>
+       <select id="fUAccess">
+         <option value="FULL" ${x.accessLevel==="FULL"?"selected":""}>FULL Access</option>
+         <option value="EDIT" ${x.accessLevel==="EDIT"?"selected":""}>EDIT Access</option>
+         <option value="VIEW_ONLY" ${x.accessLevel==="VIEW_ONLY"?"selected":""}>VIEW_ONLY Access</option>
+       </select>
+     </div>
+     <div class="field full"><label>Phone Number</label><input id="fUPhone" value="${esc(x.phone)}"></div>
+   </div>
+   <br><button class="btn primary" id="saveUserBtn"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save User</button>
+ `);
+
+ document.getElementById("saveUserBtn").onclick = () => {
+   let selectedRole = val("fURole");
+   if (selectedRole === "__NEW_ROLE__") {
+     const newRoleName = val("fCustomRoleName").toUpperCase().replace(/\s+/g, '_');
+     if (!newRoleName) return alert("Kripya Naya Custom Role Title likhein.");
+     
+     if (!db.customRoles) db.customRoles = [];
+     if (!db.customRoles.includes(newRoleName)) {
+       db.customRoles.push(newRoleName);
+     }
+     selectedRole = newRoleName;
+   }
+
+   const data = { 
+     name: val("fUName"), 
+     email: val("fUEmail"), 
+     pass: val("fUPass"),
+     role: selectedRole, 
+     centre: val("fUCentre"), 
+     accessLevel: val("fUAccess"), 
+     phone: val("fUPhone") 
+   };
+   if (!data.name || !data.email) return alert("Name and Email are required.");
+   
+   if (item) Object.assign(item, data);
+   else db.users.push({ id: nextId("u"), ...data });
+   
+   saveDB("✓ User access saved successfully!"); closeM(); users();
+ };
+}
+
+function toggleCustomRoleInput() {
+ const selectVal = document.getElementById("fURole")?.value;
+ const box = document.getElementById("customRoleBox");
+ if (box) {
+   box.style.display = (selectVal === "__NEW_ROLE__") ? "block" : "none";
+ }
+}
+
+function editUserModal(id) { userModal(db.users.find(u => u.id === id)); }
+
+// 14. BACKUP & RESTORE WITH EXPLICIT RESTORE ALERT CONFIRMATION
+function backup() {
+ document.getElementById("main").innerHTML = `
+ <div class="title">
+   <h2>System Backup & Data Restore</h2>
+ </div>
+ <div class="cards">
+   <div class="card">
+     <div>
+       <h3 style="margin:0 0 6px 0;color:#174c3d">Export Complete Backup</h3>
+       <p class="muted" style="margin:0">Download a full snapshot JSON file containing all centres, production, yarn, payments, and user records.</p>
+     </div>
+     <button class="btn primary sm" style="margin-top:14px" onclick="exportJSONBackup()">Download JSON Backup</button>
+   </div>
+   <div class="card">
+     <div>
+       <h3 style="margin:0 0 6px 0;color:#174c3d">Restore Data Backup</h3>
+       <p class="muted" style="margin:0">Upload a saved JSON backup file to restore database records.</p>
+     </div>
+     <input type="file" id="restoreFile" accept=".json" style="margin-top:10px;font-size:12px">
+     <button class="btn primary sm" style="margin-top:10px" onclick="restoreJSONBackup()">Upload & Restore</button>
+   </div>
+ </div>`;
+}
+
+function exportJSONBackup() {
+ const str = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
+ const link = document.createElement("a");
+ link.setAttribute("href", str);
+ link.setAttribute("download", `Ekal_Handloom_Backup_${new Date().toISOString().slice(0,10)}.json`);
+ document.body.appendChild(link);
+ link.click();
+ document.body.removeChild(link);
+ showToast("✓ Backup JSON file downloaded!");
+}
+
+function restoreJSONBackup() {
+ const fileInput = document.getElementById("restoreFile");
+ if (!fileInput.files || !fileInput.files[0]) return alert("Please select a valid JSON backup file.");
+
+ const reader = new FileReader();
+ reader.onload = function(e) {
+   try {
+     const parsed = JSON.parse(e.target.result);
+     if (parsed.users && parsed.centres) {
+       db = parsed;
+       saveDB("✓ System restored successfully!");
+       alert("✓ System database has been restored successfully! Cloud sync is complete.");
+       render(current);
+     } else {
+       alert("Invalid JSON format. System backup files must contain valid database keys.");
+     }
+   } catch(err) {
+     alert("Error parsing JSON file.");
+   }
+ };
+ reader.readAsText(fileInput.files[0]);
+}
+
+startApp();
+</script>
+</body>
+</html>
