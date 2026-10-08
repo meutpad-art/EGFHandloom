@@ -243,7 +243,7 @@ firebase.auth().onAuthStateChanged((user) => {
       console.error("Anonymous Auth Error:", err);
     });
   }
-});
+  
 const database = firebase.database();
 const dbRef = database.ref("ekal_handloom_data");
 
@@ -334,7 +334,6 @@ function saveDB(msg = "✓ Saved successfully!") {
   localStorage.setItem(KEY, JSON.stringify(db));
   populateQuickLoginDropdown();
 
-  // Agar user abhi authenticate nahi hua, toh 1 second wait karke try karein
   if (!firebase.auth().currentUser) {
     firebase.auth().signInAnonymously().then(() => {
       dbRef.set(db).then(() => showToast(msg)).catch(err => alert("Sync Error: " + err.message));
